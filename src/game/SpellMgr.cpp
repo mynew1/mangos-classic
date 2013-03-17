@@ -571,8 +571,7 @@ SpellBuffType GetSpellBuffType(uint32 spellId)
         return SPELL_BUFF_NONE;
     }
 
-    if (spellInfo->IsFitToFamily<SPELLFAMILY_PRIEST, CF_PRIEST_POWER_WORD_FORTITUDE>() ||
-        (spellInfo->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMP_BUFFS>() && spellInfo->School == SPELL_SCHOOL_SHADOW))
+    if (spellInfo->IsFitToFamily<SPELLFAMILY_PRIEST, CF_PRIEST_POWER_WORD_FORTITUDE>())
         return SPELL_BUFF_STAMINA;
 
     if (spellInfo->IsFitToFamily<SPELLFAMILY_MAGE, CF_MAGE_ARCANE_INT>())
