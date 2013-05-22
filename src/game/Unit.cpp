@@ -665,6 +665,11 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
 
             player_tap->SendDirectMessage(&data);
         }
+        else
+        {
+            if (this != pVictim)
+                ProcDamageAndSpell(pVictim, PROC_FLAG_KILL, PROC_FLAG_KILLED, PROC_EX_NONE, 0);
+        }
 
         // Reward player, his pets, and group/raid members
         if (player_tap != pVictim)
