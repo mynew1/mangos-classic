@@ -1860,11 +1860,9 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
         return true;
 
     if ((spellInfo_1->IsFitToFamily<SPELLFAMILY_WARRIOR, CF_WARRIOR_SUNDER_ARMOR>() ||
-         spellInfo_1->IsFitToFamily<SPELLFAMILY_ROGUE,   CF_ROGUE_EXPOSE_ARMOR>() ||
-         spellInfo_1->IsFitToFamily<SPELLFAMILY_DRUID,   CF_DRUID_FAERIE_FIRE>()) &&
+         spellInfo_1->IsFitToFamily<SPELLFAMILY_ROGUE,   CF_ROGUE_EXPOSE_ARMOR>()) &&
         (spellInfo_2->IsFitToFamily<SPELLFAMILY_WARRIOR, CF_WARRIOR_SUNDER_ARMOR>() ||
-         spellInfo_2->IsFitToFamily<SPELLFAMILY_ROGUE,   CF_ROGUE_EXPOSE_ARMOR>() ||
-         spellInfo_2->IsFitToFamily<SPELLFAMILY_DRUID,   CF_DRUID_FAERIE_FIRE>()) )
+         spellInfo_2->IsFitToFamily<SPELLFAMILY_ROGUE,   CF_ROGUE_EXPOSE_ARMOR>()))
         return true;
 
     if (spellInfo_1->IsFitToFamily<SPELLFAMILY_MAGE, CF_MAGE_D_A_MAGIC>() &&
