@@ -1845,6 +1845,9 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
     if (!spellInfo_1 || !spellInfo_2)
         return false;
 
+    if (IsChanneledSpell(spellInfo_1) && IsChanneledSpell(spellInfo_2))
+        return false;
+
     if (IsSealSpell(spellInfo_1) && IsSealSpell(spellInfo_2))
         return true;
 
