@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS `db_version`;
 CREATE TABLE `db_version` (
   `version` varchar(120) DEFAULT NULL,
   `creature_ai_version` varchar(120) DEFAULT NULL,
-  `required_z2683_01_mangos_scriptdev2_tables` bit(1) DEFAULT NULL
+  `required_z2684_01_mangos_spell_elixir` bit(1) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Used DB version notes';
 
 --
@@ -11540,7 +11540,7 @@ UNLOCK TABLES;
 DROP TABLE IF EXISTS `spell_elixir`;
 CREATE TABLE `spell_elixir` (
   `entry` int(11) unsigned NOT NULL DEFAULT '0' COMMENT 'SpellId of potion',
-  `mask` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'Mask 0x1 battle 0x2 guardian 0x3 flask 0x7 unstable flasks 0xB shattrath flasks',
+  `mask` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'Mask 0x1 flask 0x2 zanza elixir',
   PRIMARY KEY (`entry`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Spell System';
 
@@ -11551,66 +11551,14 @@ CREATE TABLE `spell_elixir` (
 LOCK TABLES `spell_elixir` WRITE;
 /*!40000 ALTER TABLE `spell_elixir` DISABLE KEYS */;
 INSERT INTO `spell_elixir` VALUES
-(  673,0x2),
-( 2367,0x1),
-( 2374,0x1),
-( 2378,0x2),
-( 2380,0x2),
-( 3160,0x1),
-( 3164,0x1),
-( 3166,0x2),
-( 3219,0x2),
-( 3220,0x2),
-( 3222,0x2),
-( 3223,0x2),
-( 3593,0x2),
-( 7844,0x1),
-( 8212,0x1),
-(10667,0x1),
-(10668,0x2),
-(10669,0x1),
-(10692,0x2),
-(10693,0x2),
-(11319,0x2),
-(11328,0x1),
-(11334,0x1),
-(11348,0x2),
-(11349,0x2),
-(11364,0x2),
-(11371,0x2),
-(11390,0x1),
-(11396,0x2),
-(11405,0x1),
-(11406,0x1),
-(11474,0x1),
-(15231,0x2),
-(15233,0x2),
-(16321,0x2),
-(16322,0x1),
-(16323,0x1),
-(16325,0x2),
-(16326,0x2),
-(16327,0x2),
-(16329,0x1),
-(17038,0x1),
-(17535,0x2),
-(17537,0x1),
-(17538,0x1),
-(17539,0x1),
-(17624,0x3),
-(17626,0x3),
-(17627,0x3),
-(17628,0x3),
-(17629,0x3),
-(21920,0x1),
-(24361,0x2),
-(24363,0x2),
-(24382,0x2),
-(24383,0x2),
-(24417,0x2),
-(26276,0x1),
-(27652,0x2),
-(27653,0x2);
+(17624,1),
+(17626,1),
+(17627,1),
+(17628,1),
+(17629,1),
+(24382,2),
+(24383,2),
+(24417,2);
 /*!40000 ALTER TABLE `spell_elixir` ENABLE KEYS */;
 UNLOCK TABLES;
 
