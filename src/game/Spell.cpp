@@ -2490,6 +2490,9 @@ void Spell::prepare(SpellCastTargets const* targets, Aura* triggeredByAura)
 {
     m_targets = *targets;
 
+    if (m_CastItem)
+        m_CastItemGuid = m_CastItem->GetObjectGuid();
+
     m_spellState = SPELL_STATE_PREPARING;
 
     m_castPositionX = m_caster->GetPositionX();
@@ -2916,6 +2919,12 @@ void Spell::update(uint32 difftime)
     UpdatePointers();
 
     if (m_targets.getUnitTargetGuid() && !m_targets.getUnitTarget())
+    {
+        cancel();
+        return;
+    }
+
+    if (m_CastItemGuid && !m_CastItem)
     {
         cancel();
         return;
@@ -3731,6 +3740,7 @@ void Spell::TakeReagents()
                 }
 
                 m_CastItem = nullptr;
+                m_CastItemGuid.Clear();
             }
         }
 
@@ -5871,6 +5881,11 @@ void Spell::UpdatePointers()
     UpdateOriginalCasterPointer();
 
     m_targets.Update(m_caster);
+
+    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+        m_CastItem = ((Player *)m_caster)->GetItemByGuid(m_CastItemGuid);
+    else
+        m_CastItem = nullptr;
 }
 
 bool Spell::CheckTargetCreatureType(Unit* target) const
@@ -6299,6 +6314,7 @@ void Spell::ClearCastItem()
         m_targets.setItemTarget(nullptr);
 
     m_CastItem = nullptr;
+    m_CastItemGuid.Clear();
 }
 
 bool Spell::HasGlobalCooldown()
