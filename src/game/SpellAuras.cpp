@@ -1270,7 +1270,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         if (m_removeMode == AURA_REMOVE_BY_DEATH)
         {
             // Stop caster Arcane Missle chanelling on death
-            if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_MAGE && (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000800)))
+            if (GetSpellProto()->IsFitToFamily<SPELLFAMILY_MAGE, CF_MAGE_ARCANE_MISSILES_CHANNEL>())
             {
                 if (Unit* caster = GetCaster())
                     caster->InterruptSpell(CURRENT_CHANNELED_SPELL);
@@ -2404,7 +2404,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
         }
 
         // Wyvern Sting
-        if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_HUNTER && GetSpellProto()->SpellFamilyFlags & UI64LIT(0x00010000))
+        if (GetSpellProto()->IsFitToFamily<SPELLFAMILY_HUNTER, CF_HUNTER_MISC>())
         {
             Unit* caster = GetCaster();
             if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
@@ -3181,9 +3181,7 @@ void Aura::HandleAuraModResistance(bool apply, bool /*Real*/)
     }
 
     // Faerie Fire (druid versions)
-    if (spellProto->SpellIconID == 109 &&
-            spellProto->SpellFamilyName == SPELLFAMILY_DRUID &&
-            spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000400))
+    if (spellProto->IsFitToFamily<SPELLFAMILY_DRUID, CF_DRUID_FAERIE_FIRE>())
     {
         target->ApplySpellDispelImmunity(spellProto, DISPEL_STEALTH, apply);
         target->ApplySpellDispelImmunity(spellProto, DISPEL_INVISIBILITY, apply);
@@ -4200,7 +4198,7 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
             {
                 case SPELLFAMILY_PRIEST:
                     // Power Word: Shield
-                    if (spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000001))
+                    if (spellProto->GetSpellFamilyFlags().test<CF_PRIEST_POWER_WORD_SHIELD>())
                     {
                         //+30% from +healing bonus
                         DoneActualBenefit = caster->SpellBaseHealingBonusDone(GetSpellSchoolMask(spellProto)) * 0.3f;
@@ -4209,13 +4207,13 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
                     break;
                 case SPELLFAMILY_MAGE:
                     // Frost Ward, Fire Ward
-                    if (spellProto->IsFitToFamilyMask(UI64LIT(0x0000000100080108)))
+                    if (spellProto->GetSpellFamilyFlags().test<CF_MAGE_FIRE_WARD, CF_MAGE_FROST_WARD>())
                         //+10% from +spell bonus
                         DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.1f;
                     break;
-                case SPELLFAMILY_WARLOCK:
+                case SPELLFAMILY_GENERIC:
                     // Shadow Ward
-                    if (spellProto->SpellFamilyFlags == UI64LIT(0x00))
+                    if (spellProto->SpellIconID == 207 && spellProto->Category == 56)
                         //+10% from +spell bonus
                         DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.1f;
                     break;
@@ -4291,7 +4289,7 @@ void Aura::PeriodicTick()
             }
 
             // Curse of Agony damage-per-tick calculation
-            if (spellProto->SpellFamilyName == SPELLFAMILY_WARLOCK && (spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000400)) && spellProto->SpellIconID == 544)
+            if (spellProto->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_CURSE_OF_AGONY>())
             {
                 // 1..4 ticks, 1/2 from normal tick damage
                 if (GetAuraTicks() <= 4)

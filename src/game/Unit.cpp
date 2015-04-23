@@ -5061,14 +5061,6 @@ void Unit::ModifyAuraState(AuraState flag, bool apply)
                 SpellEntry const* spellProto = (*itr).second->GetSpellProto();
                 if (spellProto->CasterAuraState == flag)
                 {
-                    // exceptions (applied at state but not removed at state change)
-                    // Rampage
-                    if (spellProto->SpellIconID == 2006 && spellProto->IsFitToFamilyMask(UI64LIT(0x0000000000100000)))
-                    {
-                        ++itr;
-                        continue;
-                    }
-
                     RemoveSpellAuraHolder(itr->second);
                     itr = tAuras.begin();
                 }
@@ -5778,18 +5770,18 @@ uint32 Unit::SpellHealingBonusTaken(Unit* pCaster, SpellEntry const* spellProto,
     int32 TakenAdvertisedBenefit = SpellBaseHealingBonusTaken(GetSpellSchoolMask(spellProto));
 
     // Blessing of Light dummy effects healing taken from Holy Light and Flash of Light
-    if (spellProto->SpellFamilyName == SPELLFAMILY_PALADIN && (spellProto->SpellFamilyFlags & UI64LIT(0x0000000000006000)))
+    if (spellProto->IsFitToFamily<SPELLFAMILY_PALADIN, CF_PALADIN_FLASH_OF_LIGHT2, CF_PALADIN_HOLY_LIGHT2>())
     {
         AuraList const& mDummyAuras = GetAurasByType(SPELL_AURA_DUMMY);
         for (AuraList::const_iterator i = mDummyAuras.begin(); i != mDummyAuras.end(); ++i)
         {
-            if ((*i)->GetSpellProto()->SpellVisual == 300 && ((*i)->GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000010000000)))
+            if ((*i)->GetSpellProto()->GetSpellFamilyFlags().test<CF_PALADIN_BLESSINGS>() && (*i)->GetSpellProto()->SpellVisual == 300)
             {
                 // Flash of Light
-                if ((spellProto->SpellFamilyFlags & UI64LIT(0x0000000000002000)) && (*i)->GetEffIndex() == EFFECT_INDEX_1)
+                if (spellProto->GetSpellFamilyFlags().test<CF_PALADIN_FLASH_OF_LIGHT2>() && (*i)->GetEffIndex() == EFFECT_INDEX_1)
                     TakenTotal += (*i)->GetModifier()->m_amount;
                 // Holy Light
-                else if ((spellProto->SpellFamilyFlags & UI64LIT(0x0000000000004000)) && (*i)->GetEffIndex() == EFFECT_INDEX_0)
+                else if (spellProto->GetSpellFamilyFlags().test<CF_PALADIN_HOLY_LIGHT2>() && (*i)->GetEffIndex() == EFFECT_INDEX_0)
                     TakenTotal += (*i)->GetModifier()->m_amount;
             }
         }
@@ -5800,7 +5792,7 @@ uint32 Unit::SpellHealingBonusTaken(Unit* pCaster, SpellEntry const* spellProto,
 
     // Taken mods
     // Healing Wave cast
-    if (spellProto->SpellFamilyName == SPELLFAMILY_SHAMAN && (spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000040)))
+    if (spellProto->IsFitToFamily<SPELLFAMILY_SHAMAN, CF_SHAMAN_HEALING_WAVE>())
     {
         // Search for Healing Way on Victim
         Unit::AuraList const& auraDummy = GetAurasByType(SPELL_AURA_DUMMY);

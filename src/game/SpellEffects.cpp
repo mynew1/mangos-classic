@@ -318,27 +318,24 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
             case SPELLFAMILY_WARRIOR:
             {
                 // Bloodthirst
-                if (m_spellInfo->SpellIconID == 38 && m_spellInfo->SpellFamilyFlags & UI64LIT(0x2000000))
-                {
+                if (m_spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_MORTAL_STRIKE>() && m_spellInfo->SpellIconID == 38)
                     damage = uint32(damage * (m_caster->GetTotalAttackPowerValue(BASE_ATTACK)) / 100);
-                }
                 // Shield Slam
-                else if (m_spellInfo->SpellIconID == 413 && m_spellInfo->SpellFamilyFlags & UI64LIT(0x2000000))
+                else if (m_spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_SHIELD_SLAM>())
                     damage += int32(m_caster->GetShieldBlockValue());
                 break;
             }
             case SPELLFAMILY_WARLOCK:
             {
                 // Conflagrate - consumes Immolate
-                if (m_spellInfo->SpellFamilyFlags & UI64LIT(0x0000000000000200))
+                if (m_spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_CONFLAGRATE>())
                 {
                     // for caster applied auras only
                     Unit::AuraList const& mPeriodic = unitTarget->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
                     for (Unit::AuraList::const_iterator i = mPeriodic.begin(); i != mPeriodic.end(); ++i)
                     {
-                        if ((*i)->GetCasterGuid() == m_caster->GetObjectGuid() &&
-                                // Immolate
-                                (*i)->GetSpellProto()->IsFitToFamily(SPELLFAMILY_WARLOCK, UI64LIT(0x0000000000000004)))
+                        // Immolate
+                        if ((*i)->GetSpellProto()->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE>() && (*i)->GetCasterGuid() == m_caster->GetObjectGuid())
                         {
                             unitTarget->RemoveAurasByCasterSpell((*i)->GetId(), m_caster->GetObjectGuid());
                             break;
@@ -350,7 +347,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
             case SPELLFAMILY_DRUID:
             {
                 // Ferocious Bite
-                if ((m_spellInfo->SpellFamilyFlags & UI64LIT(0x000800000)) && m_spellInfo->SpellVisual == 6587)
+                if (m_spellInfo->GetSpellFamilyFlags().test<CF_DRUID_RIP_BITE>() && m_spellInfo->SpellIconID == 1680)
                 {
                     // converts each extra point of energy into ($f1+$AP/630) additional damage
                     float multiple = m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 630 + m_spellInfo->DmgMultiplier[effect_idx];
@@ -994,7 +991,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
         case SPELLFAMILY_WARRIOR:
         {
             // Execute
-            if (m_spellInfo->SpellFamilyFlags & UI64LIT(0x20000000))
+            if (m_spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_EXECUTE>())
             {
                 if (!unitTarget)
                     return;
@@ -1018,7 +1015,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
         case SPELLFAMILY_WARLOCK:
         {
             // Life Tap
-            if (m_spellInfo->SpellFamilyFlags & UI64LIT(0x0000000000040000))
+            if (m_spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_LIFE_TAP>())
             {
                 float cost = m_currentBasePoints[EFFECT_INDEX_0];
 
@@ -1217,7 +1214,8 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
         case SPELLFAMILY_SHAMAN:
         {
             // Flametongue Weapon Proc, Ranks
-            if (m_spellInfo->SpellFamilyFlags & UI64LIT(0x0000000000200000))
+            // Flametongue Totem Proc, Ranks
+            if (m_spellInfo->GetSpellFamilyFlags().test<CF_SHAMAN_FLAMETONGUE_WEAPON, CF_SHAMAN_FLAMETONGUE_TOTEM>())
             {
                 if (!m_CastItem)
                 {
@@ -1315,7 +1313,7 @@ void Spell::EffectTriggerSpell(SpellEffectIndex eff_idx)
                 if (!spellInfo)
                     continue;
 
-                if (spellInfo->IsFitToFamily(SPELLFAMILY_ROGUE, UI64LIT(0x0000000000400000)))
+                if (spellInfo->IsFitToFamily<SPELLFAMILY_ROGUE, CF_ROGUE_STEALTH>())
                 {
                     spellId = spellInfo->Id;
                     break;
@@ -1645,13 +1643,10 @@ void Spell::EffectHeal(SpellEffectIndex /*eff_idx*/)
             Aura* targetAura = nullptr;
             for (Unit::AuraList::const_iterator i = RejorRegr.begin(); i != RejorRegr.end(); ++i)
             {
-                if ((*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_DRUID &&
-                        // Regrowth or Rejuvenation 0x40 | 0x10
-                        ((*i)->GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000050)))
-                {
+                // Regrowth or Rejuvenation
+                if ((*i)->GetSpellProto()->IsFitToFamily<SPELLFAMILY_DRUID, CF_DRUID_REJUVENATION, CF_DRUID_REGROWTH>())
                     if (!targetAura || (*i)->GetAuraDuration() < targetAura->GetAuraDuration())
                         targetAura = *i;
-                }
             }
 
             if (!targetAura)
@@ -2238,8 +2233,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
         return;
 
     // Shield Slam 50% chance dispel
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR && (m_spellInfo->SpellFamilyFlags & UI64LIT(0x0000000100000000)) &&
-            !roll_chance_i(50))
+    if (m_spellInfo->IsFitToFamily<SPELLFAMILY_WARRIOR, CF_WARRIOR_SHIELD_SLAM>() && !roll_chance_i(50))
         return;
 
     // Fill possible dispel list
@@ -3129,7 +3123,7 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
         case SPELLFAMILY_ROGUE:
         {
             // Ambush
-            if (m_spellInfo->SpellFamilyFlags & UI64LIT(0x00000200))
+            if (m_spellInfo->GetSpellFamilyFlags().test<CF_ROGUE_AMBUSH>())
             {
                 customBonusDamagePercentMod = true;
                 bonusDamagePercentMod = 2.5f;               // 250%
@@ -3202,13 +3196,6 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
 
     // prevent negative damage
     m_damage += uint32(bonus > 0 ? bonus : 0);
-
-    // Mangle (Cat): CP
-    if (m_spellInfo->IsFitToFamily(SPELLFAMILY_DRUID, UI64LIT(0x0000040000000000)))
-    {
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
-            ((Player*)m_caster)->AddComboPoints(unitTarget, 1);
-    }
 }
 
 void Spell::EffectThreat(SpellEffectIndex /*eff_idx*/)
@@ -3714,7 +3701,8 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 int32 spellid = m_spellInfo->Id;            // send main spell id as basepoints for not used effect
                 m_caster->CastCustomSpell(unitTarget, 19993, &heal, &spellid, nullptr, true);
             }
-            else if (m_spellInfo->SpellFamilyFlags & UI64LIT(0x0000000000800000))
+            // Judgement
+            else if (m_spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT>())
             {
                 if (!unitTarget || !unitTarget->isAlive())
                     return;
@@ -3781,7 +3769,7 @@ void Spell::EffectSanctuary(SpellEffectIndex /*eff_idx*/)
     unitTarget->getHostileRefManager().deleteReferences();  // stop all fighting
 
     // Vanish allows to remove all threat and cast regular stealth so other spells can be used
-    if (m_spellInfo->IsFitToFamily(SPELLFAMILY_ROGUE, UI64LIT(0x0000000000000800)))
+    if (m_spellInfo->IsFitToFamily<SPELLFAMILY_ROGUE, CF_ROGUE_VANISH>())
         ((Player*)m_caster)->RemoveSpellsCausingAura(SPELL_AURA_MOD_ROOT);
 }
 

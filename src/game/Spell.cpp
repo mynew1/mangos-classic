@@ -434,12 +434,11 @@ void Spell::FillTargetMap()
                     {
                         case TARGET_NONE:                   // Fill Target based on A only
                             // Arcane Missiles have strange targeting for auras
-                            if (m_spellInfo->SpellFamilyName == SPELLFAMILY_MAGE && m_spellInfo->SpellFamilyFlags & UI64LIT(0x00000800))
+                            if(m_spellInfo->IsFitToFamily<SPELLFAMILY_MAGE, CF_MAGE_ARCANE_MISSILES_CHANNEL>() || m_spellInfo->Id == 13278)
                             {
-                                if (m_caster->GetTypeId() == TYPEID_PLAYER)
-                                    if (Unit* target = ObjectAccessor::Instance().GetUnit(*m_caster, ((Player*)m_caster)->GetSelectionGuid()))
-                                        if (!m_caster->IsFriendlyTo(target))
-                                            tmpUnitLists[i /*==effToIndex[i]*/].push_back(target);
+                                if (Unit* target = m_targets.getUnitTarget())
+                                    if (!m_caster->IsFriendlyTo(target))
+                                        tmpUnitLists[i /*==effToIndex[i]*/].push_back(target);
                             }
                             else
                                 SetTargetMap(SpellEffectIndex(i), m_spellInfo->EffectImplicitTargetA[i], tmpUnitLists[i /*==effToIndex[i]*/]);
@@ -642,22 +641,22 @@ void Spell::prepareDataForTriggerSystem()
         {
             case SPELLFAMILY_MAGE:
                 // Arcane Missiles / Blizzard triggers need do it
-                if (m_spellInfo->IsFitToFamilyMask(UI64LIT(0x0000000000200080)))
+                if (m_spellInfo->GetSpellFamilyFlags().test<CF_MAGE_ARCANE_MISSILES, CF_MAGE_BLIZZARD>())
                     m_canTrigger = true;
                 break;
             case SPELLFAMILY_WARLOCK:
-                // For Hellfire Effect / Rain of Fire / Seed of Corruption triggers need do it
-                if (m_spellInfo->IsFitToFamilyMask(UI64LIT(0x0000800000000060)))
+                // For Hellfire Effect / Rain of Fire triggers need do it
+                if (m_spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_HELLFIRE, CF_WARLOCK_RAIN_OF_FIRE>())
                     m_canTrigger = true;
                 break;
             case SPELLFAMILY_HUNTER:
-                // Hunter Explosive Trap Effect/Immolation Trap Effect/Frost Trap Aura/Snake Trap Effect
-                if (m_spellInfo->IsFitToFamilyMask(UI64LIT(0x0000200000000014)))
+                // Hunter Explosive Trap Effect / Immolation Trap Effect / Frost Trap Aura
+                if (m_spellInfo->GetSpellFamilyFlags().test<CF_HUNTER_FROST_TRAP_AURA, CF_HUNTER_FIRE_TRAP_EFFECTS>())
                     m_canTrigger = true;
                 break;
             case SPELLFAMILY_PALADIN:
                 // For Holy Shock triggers need do it
-                if (m_spellInfo->IsFitToFamilyMask(UI64LIT(0x0001000000200000)))
+                if (m_spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_HOLY_SHOCK>())
                     m_canTrigger = true;
                 break;
             default:
@@ -714,8 +713,8 @@ void Spell::prepareDataForTriggerSystem()
             m_negativeEffectMask |= (1 << i);
 
     // Hunter traps spells (for Entrapment trigger)
-    // Gives your Immolation Trap, Frost Trap, Explosive Trap, and Snake Trap ....
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_HUNTER && m_spellInfo->SpellFamilyFlags & UI64LIT(0x000020000000001C))
+    // Gives your Immolation Trap, Frost Trap, Explosive Trap
+    if (!m_spellInfo->IsFitToFamily<SPELLFAMILY_HUNTER, CF_HUNTER_FIRE_TRAP_EFFECTS, CF_HUNTER_FREEZING_TRAP_EFFECT, CF_HUNTER_FROST_TRAP_AURA>())
         m_procAttacker |= PROC_FLAG_ON_TRAP_ACTIVATION;
 }
 
@@ -1051,7 +1050,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
         caster->DealSpellDamage(&damageInfo, true);
 
         // Bloodthirst
-        if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR && m_spellInfo->SpellFamilyFlags & UI64LIT(0x0000000002000000))
+        if (m_spellInfo->IsFitToFamily<SPELLFAMILY_WARRIOR, CF_WARRIOR_MORTAL_STRIKE>() && m_spellInfo->SpellVisual == 372)
         {
             uint32 BTAura = 0;
             switch (m_spellInfo->Id)
@@ -2694,7 +2693,7 @@ void Spell::cast(bool skipCheck)
         case SPELLFAMILY_PRIEST:
         {
             // Power Word: Shield
-            if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->SpellFamilyFlags & UI64LIT(0x0000000000000001))
+            if (m_spellInfo->GetSpellFamilyFlags().test<CF_PRIEST_POWER_WORD_SHIELD>())
                 AddPrecastSpell(6788);                      // Weakened Soul
 
             switch (m_spellInfo->Id)
@@ -4463,7 +4462,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                         return SPELL_FAILED_BAD_TARGETS;
                 }
                 // Conflagrate
-                else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK && m_spellInfo->SpellFamilyFlags & UI64LIT(0x0000000000000200))
+                else if (m_spellInfo->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_CONFLAGRATE>())
                 {
                     if (!m_targets.getUnitTarget())
                         return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
@@ -4473,10 +4472,8 @@ SpellCastResult Spell::CheckCast(bool strict)
                     Unit::AuraList const& mPeriodic = m_targets.getUnitTarget()->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
                     for (Unit::AuraList::const_iterator i = mPeriodic.begin(); i != mPeriodic.end(); ++i)
                     {
-                        if ((*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_WARLOCK &&
-                                (*i)->GetCasterGuid() == m_caster->GetObjectGuid() &&
-                                // Immolate
-                                ((*i)->GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000004)))
+                        // Immolate
+                        if ((*i)->GetSpellProto()->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE>() && (*i)->GetCasterGuid() == m_caster->GetObjectGuid())
                         {
                             found = true;
                             break;
