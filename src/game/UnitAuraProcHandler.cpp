@@ -464,7 +464,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
                     {
                         if (SpellEntry const* iterSpellProto = (*iter)->GetSpellProto())
                         {
-                            if (iterSpellProto->SpellFamilyName == SPELLFAMILY_MAGE && (iterSpellProto->SpellFamilyFlags & UI64LIT(0x10000000)))
+                            if (iterSpellProto->IsFitToFamily<SPELLFAMILY_MAGE, CF_MAGE_MAGE_ARMOR>())
                             {
                                 found = true;
                                 break;
@@ -589,23 +589,9 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
             break;
         }
         case SPELLFAMILY_WARRIOR:
-        {
-            // Retaliation
-            if (dummySpell->IsFitToFamilyMask(UI64LIT(0x0000000800000000)))
-            {
-                // check attack comes not from behind
-                if (!HasInArc(M_PI_F, pVictim))
-                    return SPELL_AURA_PROC_FAILED;
-
-                triggered_spell_id = 22858;
-                break;
-            }
             break;
-        }
         case SPELLFAMILY_WARLOCK:
-        {
             break;
-        }
         case SPELLFAMILY_PRIEST:
         {
             switch (dummySpell->Id)
@@ -683,7 +669,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura
         case SPELLFAMILY_PALADIN:
         {
             // Seal of Righteousness - melee proc dummy
-            if ((dummySpell->SpellFamilyFlags & UI64LIT(0x000000008000000)) && triggeredByAura->GetEffIndex() == EFFECT_INDEX_0)
+            if (dummySpell->GetSpellFamilyFlags().test<CF_PALADIN_SEALS>() && triggeredByAura->GetEffIndex() == EFFECT_INDEX_0)
             {
                 if (GetTypeId() != TYPEID_PLAYER)
                     return SPELL_AURA_PROC_FAILED;
@@ -954,15 +940,22 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
                 if (!pVictim || !pVictim->isAlive() || pVictim == this || procSpell == nullptr)
                     return SPELL_AURA_PROC_FAILED;
                 // Calculate spell tick count for spells
-                uint32 tick = 1; // Default tick = 1
+                uint32 tick = 0;
 
-                // Hellfire have 15 tick
-                if (procSpell->SpellFamilyFlags & UI64LIT(0x0000000000000040))
-                    tick = 15;
                 // Rain of Fire have 4 tick
-                else if (procSpell->SpellFamilyFlags & UI64LIT(0x0000000000000020))
+                if (procSpell->GetSpellFamilyFlags().test<CF_WARLOCK_RAIN_OF_FIRE>())
                     tick = 4;
-                else
+                else if (procSpell->GetSpellFamilyFlags().test<CF_WARLOCK_HELLFIRE>())
+                {
+                    // Hellfire have 15 tick
+                    if (procSpell->SpellIconID == 937)
+                        tick = 15;
+                    // Soul Fire
+                    else if (procSpell->SpellIconID == 184)
+                        tick = 1;
+                }
+
+                if (!tick)
                     return SPELL_AURA_PROC_FAILED;
 
                 // Calculate chance = baseChance / tick
@@ -1030,7 +1023,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
         case SPELLFAMILY_PALADIN:
         {
             // Judgement of Light and Judgement of Wisdom
-            if (auraSpellInfo->SpellFamilyFlags & UI64LIT(0x0000000000080000))
+            if (auraSpellInfo->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_OF_WISDOM_LIGHT>())
             {
                 switch (auraSpellInfo->Id)
                 {
@@ -1058,7 +1051,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
                 // procspell is triggered spell but we need mana cost of original casted spell
                 uint32 originalSpellId = procSpell->Id;
                 // Holy Shock
-                if (procSpell->SpellFamilyFlags & UI64LIT(0x0000000000200000))
+                if (procSpell->GetSpellFamilyFlags().test<CF_PALADIN_HOLY_SHOCK>())
                 {
                     switch (procSpell->Id)
                     {
@@ -1085,24 +1078,17 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
         case SPELLFAMILY_SHAMAN:
         {
             // Lightning Shield (overwrite non existing triggered spell call in spell.dbc
-            if (auraSpellInfo->IsFitToFamilyMask(UI64LIT(0x0000000000000400)) && auraSpellInfo->SpellVisual == 37)
+            if (auraSpellInfo->GetSpellFamilyFlags().test<CF_SHAMAN_LIGHTNING_SHIELD>() && auraSpellInfo->SpellVisual == 37)
             {
                 switch (auraSpellInfo->Id)
                 {
-                    case 324:                           // Rank 1
-                        trigger_spell_id = 26364; break;
-                    case 325:                           // Rank 2
-                        trigger_spell_id = 26365; break;
-                    case 905:                           // Rank 3
-                        trigger_spell_id = 26366; break;
-                    case 945:                           // Rank 4
-                        trigger_spell_id = 26367; break;
-                    case 8134:                          // Rank 5
-                        trigger_spell_id = 26369; break;
-                    case 10431:                         // Rank 6
-                        trigger_spell_id = 26370; break;
-                    case 10432:                         // Rank 7
-                        trigger_spell_id = 26363; break;
+                    case 324: trigger_spell_id = 26364; break;      // Rank 1
+                    case 325: trigger_spell_id = 26365; break;      // Rank 2
+                    case 905: trigger_spell_id = 26366; break;      // Rank 3
+                    case 945: trigger_spell_id = 26367; break;      // Rank 4
+                    case 8134: trigger_spell_id = 26369; break;     // Rank 5
+                    case 10431: trigger_spell_id = 26370; break;    // Rank 6
+                    case 10432: trigger_spell_id = 26363; break;    // Rank 7
                     default:
                         sLog.outError("Unit::HandleProcTriggerSpellAuraProc: Spell %u not handled in LShield", auraSpellInfo->Id);
                         return SPELL_AURA_PROC_FAILED;
@@ -1354,7 +1340,7 @@ SpellAuraProcResult Unit::HandleModResistanceAuraProc(Unit* /*pVictim*/, uint32 
     SpellEntry const* spellInfo = triggeredByAura->GetSpellProto();
 
     // Inner Fire
-    if (spellInfo->IsFitToFamily(SPELLFAMILY_PRIEST, UI64LIT(0x0000000000002)))
+    if (spellInfo->IsFitToFamily<SPELLFAMILY_PRIEST, CF_PRIEST_INNER_FIRE>())
     {
         // only at real damage
         if (!damage)

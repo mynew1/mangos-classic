@@ -449,7 +449,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
         case SPELLFAMILY_MAGE:
         {
             // family flags 18(Molten), 25(Frost/Ice), 28(Mage)
-            if (spellInfo->SpellFamilyFlags & UI64LIT(0x12000000))
+            if (spellInfo->GetSpellFamilyFlags().test<CF_MAGE_ELEMENTAL_ARMOR, CF_MAGE_MAGE_ARMOR>())
                 return SPELL_SPECIFIC_MAGE_ARMOR;
 
             if (spellInfo->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_MOD_CONFUSE && spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
@@ -459,7 +459,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
         }
         case SPELLFAMILY_WARRIOR:
         {
-            if (spellInfo->SpellFamilyFlags & UI64LIT(0x00008000010000))
+            if (spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_BATTLE_SHOUT>())
                 return SPELL_SPECIFIC_POSITIVE_SHOUT;
 
             break;
@@ -497,10 +497,11 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
             if (IsSealSpell(spellInfo))
                 return SPELL_SPECIFIC_SEAL;
 
-            if (spellInfo->IsFitToFamilyMask(UI64LIT(0x0000000010000100)))
+            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_SALVATION1, CF_PALADIN_BLESSINGS>())
                 return SPELL_SPECIFIC_BLESSING;
 
-            if ((spellInfo->IsFitToFamilyMask(UI64LIT(0x0000000020180400))) && spellInfo->baseLevel != 0)
+            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_OF_RIGHTEOUSNESS, CF_PALADIN_JUDGEMENT_OF_WISDOM_LIGHT, CF_PALADIN_JUDGEMENT_OF_JUSTICE, CF_PALADIN_JUDGEMENT_OF_THE_CRUSADER>() &&
+                spellInfo->baseLevel != 0)
                 return SPELL_SPECIFIC_JUDGEMENT;
 
             for (int i = 0; i < 3; ++i)
@@ -3380,34 +3381,34 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
         case SPELLFAMILY_ROGUE:
         {
             // Kidney Shot
-            if (spellproto->IsFitToFamilyMask(UI64LIT(0x00000200000)))
+            if (spellproto->GetSpellFamilyFlags().test<CF_ROGUE_KIDNEY_SHOT>())
                 return DIMINISHING_KIDNEYSHOT;
             // Blind
-            else if (spellproto->IsFitToFamilyMask(UI64LIT(0x00001000000)))
+            else if (spellproto->GetSpellFamilyFlags().test<CF_ROGUE_BLIND>())
                 return DIMINISHING_BLIND;
             break;
         }
         case SPELLFAMILY_HUNTER:
         {
             // Freezing Trap
-            if (spellproto->IsFitToFamilyMask(UI64LIT(0x00000000008)))
+            if (spellproto->GetSpellFamilyFlags().test<CF_HUNTER_FREEZING_TRAP_EFFECT>())
                 return DIMINISHING_FREEZE;
             break;
         }
         case SPELLFAMILY_WARLOCK:
         {
             // Fear
-            if (spellproto->IsFitToFamilyMask(UI64LIT(0x0000000080000000)) && spellproto->Mechanic == MECHANIC_FEAR)
+            if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_MISC_DEBUFFS>() && spellproto->Mechanic == MECHANIC_FEAR)
                 return DIMINISHING_WARLOCK_FEAR;
             // Curses/etc
-            if (spellproto->IsFitToFamilyMask(UI64LIT(0x0000000080000000)))
+            if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_MISC_DEBUFFS>())
                 return DIMINISHING_LIMITONLY;
             break;
         }
         case SPELLFAMILY_WARRIOR:
         {
             // Hamstring - limit duration to 10s in PvP
-            if (spellproto->IsFitToFamilyMask(UI64LIT(0x00000000002)))
+            if (spellproto->GetSpellFamilyFlags().test<CF_WARRIOR_HAMSTRING>())
                 return DIMINISHING_LIMITONLY;
             break;
         }
