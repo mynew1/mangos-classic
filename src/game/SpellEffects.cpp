@@ -2209,6 +2209,101 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
         ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
 }
 
+void Spell::EffectSummonType(SpellEffectIndex eff_idx)
+{
+    uint32 prop_id = m_spellInfo->EffectMiscValueB[eff_idx];
+    SummonPropertiesEntry const* summon_prop = sSummonPropertiesStore.LookupEntry(prop_id);
+    if (!summon_prop)
+    {
+        sLog.outError("EffectSummonType: Unhandled summon type %u", prop_id);
+        return;
+    }
+
+    switch (summon_prop->Group)
+    {
+        // faction handled later on, or loaded from template
+        case SUMMON_PROP_GROUP_WILD:
+        case SUMMON_PROP_GROUP_FRIENDLY:
+        {
+            switch (summon_prop->Title)
+            {
+                case UNITNAME_SUMMON_TITLE_NONE:
+                {
+                    // those are classical totems - effectbasepoints is their hp and not summon ammount!
+                    // UNITNAME_SUMMON_TITLE_TOTEM = 121: 23035, battlestands
+                    if (prop_id == 121)
+                        DoSummonTotem(eff_idx);
+                    else if(prop_id == 64)
+                        DoSummonPossessed(eff_idx, summon_prop->FactionId);
+                    else
+                        DoSummonWild(eff_idx, summon_prop->FactionId);
+                    break;
+                }
+                case UNITNAME_SUMMON_TITLE_PET:
+                    DoSummonGuardian(eff_idx, summon_prop->FactionId);
+                    break;
+                case UNITNAME_SUMMON_TITLE_GUARDIAN:
+                {
+                    if (prop_id == 61)                      // mixed guardians, totems, statues
+                    {
+                        // * Stone Statue, etc  -- fits much better totem AI
+                        if (m_spellInfo->SpellIconID == 2056)
+                            DoSummonTotem(eff_idx);
+                        else
+                        {
+                            // possible sort totems/guardians only by summon creature type
+                            CreatureInfo const* cInfo = ObjectMgr::GetCreatureTemplate(m_spellInfo->EffectMiscValue[eff_idx]);
+
+                            if (!cInfo)
+                                return;
+
+                            // FIXME: not all totems and similar cases seelcted by this check...
+                            if (cInfo->CreatureType == CREATURE_TYPE_TOTEM)
+                                DoSummonTotem(eff_idx);
+                            else
+                                DoSummonGuardian(eff_idx, summon_prop->FactionId);
+                        }
+                    }
+                    else
+                        DoSummonGuardian(eff_idx, summon_prop->FactionId);
+                    break;
+                }
+                case UNITNAME_SUMMON_TITLE_TOTEM:
+                {
+                    DoSummonTotem(eff_idx, summon_prop->Slot);
+                    break;
+                }
+                case UNITNAME_SUMMON_TITLE_COMPANION:
+                {
+                    DoSummonCritter(eff_idx, summon_prop->FactionId);
+                    break;
+                }
+                default:
+                    sLog.outError("EffectSummonType: Unhandled summon title %u", summon_prop->Title);
+                    break;
+            }
+            break;
+        }
+        case SUMMON_PROP_GROUP_PETS:
+        {
+            DoSummon(eff_idx);
+            break;
+        }
+        case SUMMON_PROP_GROUP_CONTROLLABLE:
+        {
+            DoSummonPossessed(eff_idx, summon_prop->FactionId);
+            break;
+        }
+        default:
+            sLog.outError("EffectSummonType: Unhandled summon group type %u", summon_prop->Group);
+            break;
+    }
+}
+
+void Spell::DoSummon(SpellEffectIndex eff_idx)
+{
+}
+
 void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
 {
     if (!unitTarget)
@@ -3586,10 +3681,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     if (!unitTarget)
                         return;
 
-                    unitTarget->CastSpell(unitTarget, 27690, true);
-                    unitTarget->CastSpell(unitTarget, 27691, true);
-                    unitTarget->CastSpell(unitTarget, 27692, true);
-                    unitTarget->CastSpell(unitTarget, 27693, true);
+                    // Spells 27690, 27691, 27692, 27693 are missing from DBC
+                    // So we need to summon creature 16119 manually
+                    float x, y, z;
+                    float angle = unitTarget->GetOrientation();
+                    for (uint8 i = 0; i < 4; ++i)
+                    {
+                        unitTarget->GetNearPoint(unitTarget, x, y, z, unitTarget->GetObjectBoundingRadius(), INTERACTION_DISTANCE, angle + i * M_PI_F / 2);
+                        unitTarget->SummonCreature(16119, x, y, z, angle, TEMPSUMMON_TIMED_OOC_OR_DEAD_DESPAWN, 10 * MINUTE * IN_MILLISECONDS);
+                    }
                     return;
                 }
                 case 27695:                                 // Summon Bone Mages
@@ -3618,8 +3718,125 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     if (!unitTarget)
                         return;
 
-                    unitTarget->CastSpell(unitTarget, 28561, true, nullptr, nullptr, m_caster->GetObjectGuid());
+                    m_caster->SummonCreature(16474, unitTarget->GetPositionX(), unitTarget->GetPositionY(), unitTarget->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 30000);
                     return;
+                }
+                /********************************** TBC and Wrath CONTENT ************************************
+                case 29395:                                 // Break Kaliri Egg
+                {
+                    uint32 creature_id;
+                    uint32 rand = urand(0, 99);
+
+                    if (rand < 10)
+                        creature_id = 17034;
+                    else if (rand < 60)
+                        creature_id = 17035;
+                    else
+                        creature_id = 17039;
+
+                    if (WorldObject* pSource = GetAffectiveCasterObject())
+                        pSource->SummonCreature(creature_id, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_OOC_OR_DEAD_DESPAWN, 120 * IN_MILLISECONDS);
+                    return;
+                }
+                case 29830:                                 // Mirren's Drinking Hat
+                {
+                    uint32 item = 0;
+                    switch (urand(1, 6))
+                    {
+                        case 1:
+                        case 2:
+                        case 3:
+                            item = 23584; break;            // Loch Modan Lager
+                        case 4:
+                        case 5:
+                            item = 23585; break;            // Stouthammer Lite
+                        case 6:
+                            item = 23586; break;            // Aerie Peak Pale Ale
+                    }
+
+                    if (item)
+                        DoCreateItem(eff_idx, item);
+
+                    break;
+                }
+                case 30541:                                 // Blaze
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 30542, true);
+                    break;
+                }
+                case 30469:                                 // Nether Beam
+                {
+                    if (!unitTarget)
+                        return;
+
+                    // The player and boss spells are different
+                    if (unitTarget->GetTypeId() == TYPEID_PLAYER)
+                    {
+                        switch (m_caster->GetEntry())
+                        {
+                            case 17367:
+                                if (unitTarget->HasAura(38638))
+                                    return;
+
+                                m_caster->CastSpell(unitTarget, 30401, true);
+                                m_caster->CastSpell(unitTarget, 30422, true);
+                                break;
+                            case 17368:
+                                if (unitTarget->HasAura(38639))
+                                    return;
+
+                                m_caster->CastSpell(unitTarget, 30402, true);
+                                m_caster->CastSpell(unitTarget, 30423, true);
+                                break;
+                            case 17369:
+                                if (unitTarget->HasAura(38637))
+                                    return;
+
+                                m_caster->CastSpell(unitTarget, 30400, true);
+                                m_caster->CastSpell(unitTarget, 30421, true);
+                                break;
+                        }
+                    }
+                    // target boss
+                    else if (unitTarget->GetEntry() == 15689)
+                    {
+                        switch (m_caster->GetEntry())
+                        {
+                            case 17367:
+                                m_caster->CastSpell(unitTarget, 30464, true);
+                                m_caster->CastSpell(unitTarget, 30467, true);
+                                break;
+                            case 17368:
+                                m_caster->CastSpell(unitTarget, 30463, true);
+                                m_caster->CastSpell(unitTarget, 30468, true);
+                                break;
+                            case 17369:
+                                m_caster->CastSpell(unitTarget, 30465, true);
+                                m_caster->CastSpell(unitTarget, 30466, true);
+                                break;
+                        }
+                    }
+                    return;
+                }
+                case 30769:                                 // Pick Red Riding Hood
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    // cast Little Red Riding Hood
+                    m_caster->CastSpell(unitTarget, 30768, true);
+                    break;
+                }
+                case 30835:                                 // Infernal Relay
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 30836, true, nullptr, nullptr, m_caster->GetObjectGuid());
+                    break;
                 }
                 case 30918:                                 // Improved Sprint
                 {
@@ -3630,6 +3847,218 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->RemoveAurasAtMechanicImmunity(IMMUNE_TO_ROOT_AND_SNARE_MASK, 30918, true);
                     break;
                 }
+                case 37142:                                 // Karazhan - Chess NPC Action: Melee Attack: Conjured Water Elemental
+                case 37143:                                 // Karazhan - Chess NPC Action: Melee Attack: Charger
+                case 37147:                                 // Karazhan - Chess NPC Action: Melee Attack: Human Cleric
+                case 37149:                                 // Karazhan - Chess NPC Action: Melee Attack: Human Conjurer
+                case 37150:                                 // Karazhan - Chess NPC Action: Melee Attack: King Llane
+                case 37220:                                 // Karazhan - Chess NPC Action: Melee Attack: Summoned Daemon
+                case 32227:                                 // Karazhan - Chess NPC Action: Melee Attack: Footman
+                case 32228:                                 // Karazhan - Chess NPC Action: Melee Attack: Grunt
+                case 37337:                                 // Karazhan - Chess NPC Action: Melee Attack: Orc Necrolyte
+                case 37339:                                 // Karazhan - Chess NPC Action: Melee Attack: Orc Wolf
+                case 37345:                                 // Karazhan - Chess NPC Action: Melee Attack: Orc Warlock
+                case 37348:                                 // Karazhan - Chess NPC Action: Melee Attack: Warchief Blackhand
+                {
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, 32247, true);
+                    return;
+                }
+                case 32301:                                 // Ping Shirrak
+                {
+                    if (!unitTarget)
+                        return;
+
+                    // Cast Focus fire on caster
+                    unitTarget->CastSpell(m_caster, 32300, true);
+                    return;
+                }
+                case 33676:                                 // Incite Chaos
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, 33684, true);
+                    return;
+                }
+                case 34653:                                 // Fireball
+                case 36920:                                 // Fireball (h)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, unitTarget->GetMap()->IsRegularDifficulty() ? 23971 : 30928, true, nullptr, nullptr, m_caster->GetObjectGuid());
+                    return;
+                }
+                case 35865:                                 // Summon Nether Vapor
+                {
+                    if (!unitTarget)
+                        return;
+
+                    float x, y, z;
+                    for (uint8 i = 0; i < 4; ++i)
+                    {
+                        m_caster->GetNearPoint(m_caster, x, y, z, 0.0f, INTERACTION_DISTANCE, M_PI_F * .5f * i + M_PI_F * .25f);
+                        m_caster->SummonCreature(21002, x, y, z, 0, TEMPSUMMON_TIMED_OOC_OR_DEAD_DESPAWN, 30000);
+                    }
+                    return;
+                }
+                case 37431:                                 // Spout
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, urand(0, 1) ? 37429 : 37430, true);
+                    return;
+                }
+                case 37775:                                 // Karazhan - Chess NPC Action - Poison Cloud
+                {
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, 37469, true);
+                    return;
+                }
+                case 37824:                                 // Karazhan - Chess NPC Action - Shadow Mend
+                {
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, 37456, true);
+                    return;
+                }
+                case 38358:                                 // Tidal Surge
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 38353, true, nullptr, nullptr, m_caster->GetObjectGuid());
+                    return;
+                }
+                case 38920:
+                {
+                    if (Player* player = dynamic_cast<Player*>(m_caster->GetCharmer()))
+                    {
+                        player->RewardPlayerAndGroupAtEvent(unitTarget->GetEntry(),unitTarget);
+                    }
+                    return;
+                }
+                case 39338:                                 // Karazhan - Chess, Medivh CHEAT: Hand of Medivh, Target Horde
+                case 39342:                                 // Karazhan - Chess, Medivh CHEAT: Hand of Medivh, Target Alliance
+                {
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, 39339, true);
+                    return;
+                }
+                case 39341:                                 // Karazhan - Chess, Medivh CHEAT: Fury of Medivh, Target Horde
+                case 39344:                                 // Karazhan - Chess, Medivh CHEAT: Fury of Medivh, Target Alliance
+                {
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    return;
+                }
+                case 41055:                                 // Copy Weapon
+                {
+                    if (m_caster->GetTypeId() != TYPEID_UNIT || !unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    if (Item* pItem = ((Player*)unitTarget)->GetWeaponForAttack(BASE_ATTACK))
+                    {
+                        ((Creature*)m_caster)->SetVirtualItem(VIRTUAL_ITEM_SLOT_0, pItem->GetEntry());
+
+                        // Unclear what this spell should do
+                        unitTarget->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    }
+
+                    return;
+                }
+                case 41072:                                 // Bloodbolt
+                {
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    return;
+                }
+                case 41126:                                 // Flame Crash
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 41131, true);
+                    break;
+                }
+                case 42281:                                 // Sprouting
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->RemoveAurasDueToSpell(42280);
+                    unitTarget->RemoveAurasDueToSpell(42294);
+                    unitTarget->CastSpell(unitTarget, 42285, true);
+                    unitTarget->CastSpell(unitTarget, 42291, true);
+                    return;
+                }
+                case 42578:                                 // Cannon Blast
+                {
+                    if (!unitTarget)
+                        return;
+
+                    int32 basePoints = m_spellInfo->CalculateSimpleValue(eff_idx);
+                    unitTarget->CastCustomSpell(unitTarget, 42576, &basePoints, nullptr, nullptr, true);
+                    return;
+                }
+                case 44876:                                 // Force Cast - Portal Effect: Sunwell Isle
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 44870, true);
+                    break;
+                }
+                case 44811:                                 // Spectral Realm
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    // If the player can't be teleported, send him a notification
+                    if (unitTarget->HasAura(44867))
+                    {
+                        ((Player*)unitTarget)->GetSession()->SendNotification(LANG_FAIL_ENTER_SPECTRAL_REALM);
+                        return;
+                    }
+
+                    // Teleport target to the spectral realm, add debuff and force faction
+                    unitTarget->CastSpell(unitTarget, 46019, true);
+                    unitTarget->CastSpell(unitTarget, 46021, true);
+                    unitTarget->CastSpell(unitTarget, 44845, true);
+                    unitTarget->CastSpell(unitTarget, 44852, true);
+                    return;
+                }
+                case 45141:                                 // Burn
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 46394, true, nullptr, nullptr, m_caster->GetObjectGuid());
+                    return;
+                }
+                case 45151:                                 // Burn
+                {
+                    if (!unitTarget || unitTarget->HasAura(46394))
+                        return;
+
+                    // Make the burn effect jump to another friendly target
+                    unitTarget->CastSpell(unitTarget, 46394, true);
+                    return;
+                }
+                *****************************************************/
             }
             break;
         }
