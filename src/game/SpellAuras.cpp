@@ -1190,6 +1190,173 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                             caster->CastCustomSpell(target, 28836, &damage, nullptr, nullptr, true, nullptr, this);
                         return;
                     }
+                    case 31606:                             // Stormcrow Amulet
+                    {
+                        CreatureInfo const* cInfo = ObjectMgr::GetCreatureTemplate(17970);
+
+                        // we must assume db or script set display id to native at ending flight (if not, target is stuck with this model)
+                        if (cInfo)
+                            target->SetDisplayId(Creature::ChooseDisplayId(cInfo));
+
+                        return;
+                    }
+                    case 32045:                             // Soul Charge
+                    case 32051:
+                    case 32052:
+                    {
+                        // max duration is 2 minutes, but expected to be random duration
+                        // real time randomness is unclear, using max 30 seconds here
+                        // see further down for expire of this aura
+                        GetHolder()->SetAuraDuration(urand(1, 30)*IN_MILLISECONDS);
+                        return;
+                    }
+                    case 33326:                             // Stolen Soul Dispel
+                    {
+                        target->RemoveAurasDueToSpell(32346);
+                        return;
+                    }
+                    case 36587:                             // Vision Guide
+                    {
+                        target->CastSpell(target, 36573, true, nullptr, this);
+                        return;
+                    }
+                    // Gender spells
+                    case 38224:                             // Illidari Agent Illusion
+                    case 37096:                             // Blood Elf Illusion
+                    case 46354:                             // Blood Elf Illusion
+                    {
+                        uint8 gender = target->getGender();
+                        uint32 spellId;
+                        switch (GetId())
+                        {
+                            case 38224: spellId = (gender == GENDER_MALE ? 38225 : 38227); break;
+                            case 37096: spellId = (gender == GENDER_MALE ? 37093 : 37095); break;
+                            case 46354: spellId = (gender == GENDER_MALE ? 46355 : 46356); break;
+                            default: return;
+                        }
+                        target->CastSpell(target, spellId, true, nullptr, this);
+                        return;
+                    }
+                    case 39850:                             // Rocket Blast
+                        if (roll_chance_i(20))              // backfire stun
+                            target->CastSpell(target, 51581, true, nullptr, this);
+                        return;
+                    case 43873:                             // Headless Horseman Laugh
+                        target->PlayDistanceSound(11965);
+                        return;
+                    case 44877:
+                    {
+                        if (target->GetEntry() == 24916)
+                        {
+                            if (SpellAuraHolder* temp = target->GetSpellAuraHolder(44944))
+                            {
+                                if (temp->GetStackAmount() < 8)
+                                {
+                                    target->CastSpell(target, 44944, true);     // max 8 stacks
+                                }
+                            }
+                            else
+                            {
+                                target->CastSpell(target, 44944, true);
+                            }
+                        }
+                        return;
+                    }
+                    case 44943:
+                    {
+                        target->SetDisplayId(22769);
+                        target->SetName("Unstable Living Flare");
+                        target->RemoveAurasDueToSpell(44880);
+                        target->CastSpell(target, 46196, true);
+                        return;
+                    }
+                    case 46637:                             // Break Ice
+                        target->CastSpell(target, 46638, true, nullptr, this);
+                        return;
+                    case 46699:                             // Requires No Ammo
+                        if (target->GetTypeId() == TYPEID_PLAYER)
+                            // not use ammo and not allow use
+                            ((Player*)target)->RemoveAmmo();
+                        return;
+                    case 48025:                             // Headless Horseman's Mount
+                        Spell::SelectMountByAreaAndSkill(target, GetSpellProto(), 51621, 48024, 51617, 48023, 0);
+                        return;
+                }
+                break;
+            }
+            case SPELLFAMILY_WARRIOR:
+            {
+                switch (GetId())
+                {
+                    case 41099:                             // Battle Stance
+                    {
+                        if (target->GetTypeId() != TYPEID_UNIT)
+                            return;
+
+                        // Stance Cooldown
+                        target->CastSpell(target, 41102, true, nullptr, this);
+
+                        // Battle Aura
+                        target->CastSpell(target, 41106, true, nullptr, this);
+
+                        // equipment
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_0, 32614);
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_1, 0);
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_2, 0);
+                        return;
+                    }
+                    case 41100:                             // Berserker Stance
+                    {
+                        if (target->GetTypeId() != TYPEID_UNIT)
+                            return;
+
+                        // Stance Cooldown
+                        target->CastSpell(target, 41102, true, nullptr, this);
+
+                        // Berserker Aura
+                        target->CastSpell(target, 41107, true, nullptr, this);
+
+                        // equipment
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_0, 32614);
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_1, 0);
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_2, 0);
+                        return;
+                    }
+                    case 41101:                             // Defensive Stance
+                    {
+                        if (target->GetTypeId() != TYPEID_UNIT)
+                            return;
+
+                        // Stance Cooldown
+                        target->CastSpell(target, 41102, true, nullptr, this);
+
+                        // Defensive Aura
+                        target->CastSpell(target, 41105, true, nullptr, this);
+
+                        // equipment
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_0, 32604);
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_1, 31467);
+                        ((Creature*)target)->SetVirtualItem(VIRTUAL_ITEM_SLOT_2, 0);
+                        return;
+                    }
+                }
+                break;
+            }
+            case SPELLFAMILY_SHAMAN:
+            {
+                // Earth Shield
+                if ((GetSpellProto()->SpellFamilyFlags & uint64(0x40000000000)))
+                {
+                    // prevent double apply bonuses
+                    if (target->GetTypeId() != TYPEID_PLAYER || !((Player*)target)->GetSession()->PlayerLoading())
+                    {
+                        if (Unit* caster = GetCaster())
+                        {
+                            m_modifier.m_amount = caster->SpellHealingBonusDone(target, GetSpellProto(), m_modifier.m_amount, SPELL_DIRECT_DAMAGE);
+                            m_modifier.m_amount = target->SpellHealingBonusTaken(caster, GetSpellProto(), m_modifier.m_amount, SPELL_DIRECT_DAMAGE);
+                        }
+                    }
+                    return;
                 }
                 break;
             }
