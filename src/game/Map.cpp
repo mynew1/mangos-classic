@@ -1602,6 +1602,15 @@ bool Map::CanEnter(Player* player)
         return false;
     }
 
+    // disabled maps
+    switch (GetId())
+    {
+        case 509: // AQ20
+        case 531: // AQ40
+        case 533: // Naxxramas
+            return false;
+    }
+
     return true;
 }
 
