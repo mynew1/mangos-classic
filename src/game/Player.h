@@ -2066,7 +2066,7 @@ class MANGOS_DLL_SPEC Player : public Unit
             lastCheckPosY = 0.0f;
             lastCheckPosZ = 0.0f;
             lastCheckMapId = 0;
-            nextCheck = nextCheckInSec;
+            nextCheck = time(nullptr) + nextCheckInSec;
             initAntiCheat = false;
         }
 
