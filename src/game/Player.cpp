@@ -1318,8 +1318,11 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     {
         if (initAntiCheat)
         {
+            if (GetTransport())
+                ResetAntiCheatCheck(10);
+
             // TODO: check for teleport spells like portals or hearthstones
-            if (!IsTaxiFlying() && !GetTransport() && GetDistance2d(lastCheckPosX, lastCheckPosY) > 40.0f)
+            if (!IsTaxiFlying() && !GetTransport() && GetMapId() != 369 && GetDistance2d(lastCheckPosX, lastCheckPosY) > 50.0f)
             {
                 if (lastReport < time(nullptr) - 10)
                 {
