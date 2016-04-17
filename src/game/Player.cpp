@@ -1314,14 +1314,13 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     if (IsHasDelayedTeleport())
         TeleportTo(m_teleport_dest, m_teleport_options);
 
-    if (nextCheck < time(nullptr))
+    if (!isGameMaster() && nextCheck < time(nullptr))
     {
         if (GetTransport())
             ResetAntiCheatCheck(10);
 
         if (initAntiCheat)
         {
-            // TODO: check for teleport spells like portals or hearthstones
             if (!IsTaxiFlying() && !GetTransport() && GetMapId() != 369 && GetDistance2d(lastCheckPosX, lastCheckPosY) > 50.0f)
             {
                 if (lastReport < time(nullptr) - 10)
