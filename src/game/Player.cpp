@@ -536,6 +536,7 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
     lastCheckPosZ = 0.0f;
     nextCheck = 0;
     lastReport = 0;
+    initAntiCheat = false;
 }
 
 Player::~Player()
@@ -1315,12 +1316,12 @@ void Player::Update(uint32 update_diff, uint32 p_time)
 
     if (nextCheck < time(nullptr))
     {
-        if (nextCheck)
+        if (initAntiCheat)
         {
             // TODO: check for teleport spells like portals or hearthstones
-            if (!IsTaxiFlying() && !GetTransport() && GetDistance2d(lastCheckPosX, lastCheckPosY) > 250.0f)
+            if (!IsTaxiFlying() && !GetTransport() && GetDistance2d(lastCheckPosX, lastCheckPosY) > 40.0f)
             {
-                if (lastReport < time(nullptr) - 30)
+                if (lastReport < time(nullptr) - 10)
                 {
                     lastReport = time(nullptr);
 
@@ -1343,6 +1344,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
         lastCheckPosX = GetPositionX();
         lastCheckPosY = GetPositionY();
         lastCheckPosZ = GetPositionZ();
+        initAntiCheat = true;
 
         nextCheck = time(nullptr) + 1;
     }
@@ -1556,6 +1558,8 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // don't let gm level > 1 either
     if (!InBattleGround() && mEntry->IsBattleGround())
         return false;
+
+    ResetAntiCheatCheck(10);
 
     // Get MapEntrance trigger if teleport to other -nonBG- map
     bool assignedAreaTrigger = false;
