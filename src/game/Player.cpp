@@ -1332,7 +1332,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
                         {
                             char msgbuffer[1000];
                             sprintf(msgbuffer, "[ANTI-CHEAT] Player %s on AccountId %s is a possible cheater!", GetName(), GetSession()->GetAccountId());
-                            sWorld.SendServerMessage(SERVER_MSG_CUSTOM, "", player);
+                            sWorld.SendServerMessage(SERVER_MSG_CUSTOM, msgbuffer, player);
                         }
                     }
                 }
