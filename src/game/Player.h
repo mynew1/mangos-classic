@@ -2229,6 +2229,15 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint8 m_swingErrorMsg;
         float m_ammoDPS;
 
+        /////////// TEMP CHEATING SOLUTION ///////////
+        float  lastCheckPosX;
+        float  lastCheckPosY;
+        float  lastCheckPosZ;
+        uint32 lastCheckMapId;
+        time_t nextCheck;
+        time_t lastReport;
+        /////////// TEMP CHEATING SOLUTION ///////////
+
         //////////////////// Rest System/////////////////////
         time_t time_inn_enter;
         uint32 inn_trigger_id;

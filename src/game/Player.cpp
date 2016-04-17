@@ -529,6 +529,13 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(this), m_
 
     m_lastFallTime = 0;
     m_lastFallZ = 0;
+
+    lastCheckMapId = 0;
+    lastCheckPosX = 0.0f;
+    lastCheckPosY = 0.0f;
+    lastCheckPosZ = 0.0f;
+    nextCheck = 0;
+    lastReport = 0;
 }
 
 Player::~Player()
@@ -1305,6 +1312,40 @@ void Player::Update(uint32 update_diff, uint32 p_time)
 
     if (IsHasDelayedTeleport())
         TeleportTo(m_teleport_dest, m_teleport_options);
+
+    if (nextCheck < time(nullptr))
+    {
+        if (nextCheck)
+        {
+            // TODO: check for teleport spells like portals or hearthstones
+            if (!IsTaxiFlying() && !GetTransport() && GetDistance2d(lastCheckPosX, lastCheckPosY) > 250.0f)
+            {
+                if (lastReport < time(nullptr) - 30)
+                {
+                    lastReport = time(nullptr);
+
+                    HashMapHolder<Player>::MapType& m = sObjectAccessor.GetPlayers();
+                    for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
+                    {
+                        Player* player = itr->second;
+                        if (player->isGameMaster())
+                        {
+                            char msgbuffer[1000];
+                            sprintf(msgbuffer, "[ANTI-CHEAT] Player %s on AccountId %s is a possible cheater!", GetName(), GetSession()->GetAccountId());
+                            sWorld.SendServerMessage(SERVER_MSG_CUSTOM, "", player);
+                        }
+                    }
+                }
+            }
+        }
+
+        lastCheckMapId = GetMapId();
+        lastCheckPosX = GetPositionX();
+        lastCheckPosY = GetPositionY();
+        lastCheckPosZ = GetPositionZ();
+
+        nextCheck = time(nullptr) + 1;
+    }
 }
 
 void Player::SetDeathState(DeathState s)
