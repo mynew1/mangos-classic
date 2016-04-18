@@ -1316,8 +1316,8 @@ void Player::Update(uint32 update_diff, uint32 p_time)
 
     if (!isGameMaster() && nextCheck < time(nullptr))
     {
-        if (GetTransport())
-            ResetAntiCheatCheck(10);
+        if (GetTransport() || IsTaxiFlying())
+            ResetAntiCheatCheck(30);
 
         if (initAntiCheat)
         {
