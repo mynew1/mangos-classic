@@ -589,15 +589,8 @@ struct ClassFamilyMask
     bool operator!() const { return Empty(); }
     operator void const* () const { return Empty() ? nullptr : this; } // for allow normal use in if(mask)
 
-    bool IsFitToFamilyMask(uint64 familyFlags) const
-    {
-        return Flags & familyFlags;
-    }
-
-    bool IsFitToFamilyMask(ClassFamilyMask const& mask) const
-    {
-        return Flags & mask.Flags;
-    }
+    bool IsFitToFamilyMask(uint64 familyFlags) const { return !!(Flags & familyFlags); }
+    bool IsFitToFamilyMask(ClassFamilyMask const& mask) const { return !!(Flags & mask.Flags); }
 
     uint64 operator& (uint64 mask) const                    // possible will removed at finish convertion code use IsFitToFamilyMask
     {
@@ -923,6 +916,12 @@ struct SpellEntry
             return SpellFamily(SpellFamilyName) == family && IsFitToFamilyMask(mask);
         }
 
+        bool HasAttribute(SpellAttributes attribute) const { return !!(Attributes & attribute); }
+        bool HasAttribute(SpellAttributesEx attribute) const { return !!(AttributesEx & attribute); }
+        bool HasAttribute(SpellAttributesEx2 attribute) const { return !!(AttributesEx2 & attribute); }
+        bool HasAttribute(SpellAttributesEx3 attribute) const { return !!(AttributesEx3 & attribute); }
+        bool HasAttribute(SpellAttributesEx4 attribute) const { return !!(AttributesEx4 & attribute); }
+
         template <SpellFamily family, CFM_ARGS_1>
         bool IsFitToFamily() const
         {
@@ -982,12 +981,6 @@ struct SpellEntry
         {
             return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_10>();
         }
-
-        inline bool HasAttribute(SpellAttributes attribute) const { return Attributes & attribute; }
-        inline bool HasAttribute(SpellAttributesEx attribute) const { return AttributesEx & attribute; }
-        inline bool HasAttribute(SpellAttributesEx2 attribute) const { return AttributesEx2 & attribute; }
-        inline bool HasAttribute(SpellAttributesEx3 attribute) const { return AttributesEx3 & attribute; }
-        inline bool HasAttribute(SpellAttributesEx4 attribute) const { return AttributesEx4 & attribute; }
 
         inline uint32 GetMechanic() const { return Mechanic; };
         inline uint32 GetManaCost() const { return manaCost; };
