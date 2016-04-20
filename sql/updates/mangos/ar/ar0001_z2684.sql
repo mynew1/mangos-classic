@@ -1,5 +1,3 @@
-ALTER TABLE db_version CHANGE COLUMN required_z2683_01_mangos_scriptdev2_tables required_z2684_01_mangos_spell_elixir bit;
-
 DROP TABLE IF EXISTS `spell_elixir`;
 CREATE TABLE `spell_elixir` (
   `entry` int(11) unsigned NOT NULL DEFAULT '0' COMMENT 'SpellId of potion',
