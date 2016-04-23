@@ -460,7 +460,7 @@ struct npc_cork_gizeltonAI : public ScriptedAI
 {
     npc_cork_gizeltonAI(Creature* pCreature) : ScriptedAI(pCreature){ Reset(); }
 
-    void Reset() override {}
+    void Reset() override { pPlayer = nullptr; }
 
     Player* pPlayer;
     uint8 questStatus = 0;
