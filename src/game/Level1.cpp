@@ -2163,4 +2163,5 @@ bool ChatHandler::HandleAccountNoteCommand(char* args)
 
     LoginDatabase.PExecute("INSERT INTO account_note (accountId, accountNote) VALUES (%u, '%s')", targetAccountId, note);
     PSendSysMessage("Note added");
+    return true;
 }
