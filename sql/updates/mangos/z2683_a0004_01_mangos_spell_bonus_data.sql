@@ -1,3 +1,5 @@
+ALTER TABLE db_version CHANGE COLUMN required_z2683_a0003_01_mangos_spell_bonus_data required_z2683_a0004_01_mangos_spell_bonus_data bit;
+
 truncate table `spell_bonus_data`;
 insert into `spell_bonus_data`(`entry`,`direct_bonus`,`dot_bonus`,`comments`) values
 (133,1,0,'Mage - Fire Ball'),
