@@ -305,6 +305,12 @@ class MANGOS_DLL_SPEC Pet : public Creature
         // overwrite Creature function for name localization back to WorldObject version without localization
         const char* GetNameForLocaleIdx(int32 locale_idx) const { return WorldObject::GetNameForLocaleIdx(locale_idx); }
 
+        DeclinedName const* GetDeclinedNames() const { return m_declinedname; }
+
+        bool IsRanged() { return m_isRanged; }
+        void SetLastSpellMaxRange(float range) { m_LastSpellMaxRange = range; }
+        float GetLastSpellMaxRange() { return m_LastSpellMaxRange; }
+
         bool    m_removed;                                  // prevent overwrite pet state in DB at next Pet::Update if pet already removed(saved)
     protected:
         uint32  m_happinessTimer;
@@ -315,6 +321,10 @@ class MANGOS_DLL_SPEC Pet : public Creature
         int32   m_bonusdamage;
         uint64  m_auraUpdateMask;
         bool    m_loading;
+
+        DeclinedName* m_declinedname;
+        bool    m_isRanged;
+        float   m_LastSpellMaxRange;
 
     private:
         PetModeFlags m_petModeFlags;
