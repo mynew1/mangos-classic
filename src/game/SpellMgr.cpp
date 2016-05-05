@@ -159,10 +159,12 @@ uint16 GetSpellAuraMaxTicks(SpellEntry const* spellInfo)
 
     for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
     {
-        if (spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AURA && (
-                    spellInfo->EffectApplyAuraName[j] == SPELL_AURA_PERIODIC_DAMAGE ||
-                    spellInfo->EffectApplyAuraName[j] == SPELL_AURA_PERIODIC_HEAL ||
-                    spellInfo->EffectApplyAuraName[j] == SPELL_AURA_PERIODIC_LEECH))
+        if ((spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AURA ||
+            spellInfo->Effect[j] == SPELL_EFFECT_PERSISTENT_AREA_AURA ||
+            spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AREA_AURA_PARTY) && (
+                spellInfo->EffectApplyAuraName[j] == SPELL_AURA_PERIODIC_DAMAGE ||
+                spellInfo->EffectApplyAuraName[j] == SPELL_AURA_PERIODIC_HEAL ||
+                spellInfo->EffectApplyAuraName[j] == SPELL_AURA_PERIODIC_LEECH))
         {
             if (spellInfo->EffectAmplitude[j] != 0)
                 return DotDuration / spellInfo->EffectAmplitude[j];
@@ -306,10 +308,6 @@ float CalculateCustomCoefficient(SpellEntry const *spellProto, Unit const* caste
 
     if (caster->GetTypeId() == TYPEID_PLAYER)
     {
-        // Holy Light / Flash of Light triggers without benefit (it is calculated before)
-        if (spellProto->IsFitToFamily<SPELLFAMILY_PALADIN, CF_PALADIN_HOLY_LIGHT1, CF_PALADIN_FLASH_OF_LIGHT1>())
-            return 0.0f;
-
         // Seal of Righteousness
         if (spellProto->IsFitToFamily<SPELLFAMILY_PALADIN, CF_PALADIN_SEALS>() && spellProto->SpellIconID == 25)
         {
