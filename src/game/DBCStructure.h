@@ -983,6 +983,19 @@ struct SpellEntry
             return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_10>();
         }
 
+        bool HasNoInitialAggro() const
+        {
+            switch (Id)
+            {
+                case 453:
+                case 8192:
+                case 10953:
+                    return true;
+            }
+
+            return HasAttribute(SPELL_ATTR_EX3_NO_INITIAL_AGGRO);
+        }
+
         inline bool HasAttribute(SpellAttributes attribute) const { return Attributes & attribute; }
         inline bool HasAttribute(SpellAttributesEx attribute) const { return AttributesEx & attribute; }
         inline bool HasAttribute(SpellAttributesEx2 attribute) const { return AttributesEx2 & attribute; }
