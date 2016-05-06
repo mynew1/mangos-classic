@@ -2,7 +2,7 @@ ALTER TABLE db_version CHANGE COLUMN required_z2683_a0005_01_mangos_spell_bonus_
 
 DELETE FROM `spell_bonus_data` WHERE `entry` = 25742;
 INSERT INTO `spell_bonus_data` (`entry`, `comments`) VALUES
-(25742, 'Paladin - Holy Light trigger');
+(25742, 'Paladin - Seal of Righteousness trigger');
 
 DELETE FROM `spell_chain` WHERE `spell_id` IN (25742, 25740, 25739, 25738, 25737, 25736, 25735, 25713);
 INSERT INTO `spell_chain` (`spell_id`, `prev_spell`, `first_spell`, `rank`) VALUES
