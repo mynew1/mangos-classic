@@ -299,7 +299,7 @@ float CalculateDefaultCoefficient(SpellEntry const *spellProto, DamageEffectType
     return coeff * dotFactor;
 }
 
-float CalculateCustomCoefficient(SpellEntry const *spellProto, Unit const* caster, DamageEffectType const damageType, float coeff, uint8 targetNum)
+float CalculateCustomCoefficient(SpellEntry const *spellProto, Unit const* caster, DamageEffectType const damageType, bool donePart, uint8 targetNum, float coeff)
 {
     if (!caster)
         return coeff;
@@ -322,6 +322,10 @@ float CalculateCustomCoefficient(SpellEntry const *spellProto, Unit const* caste
 
             return speed * coeff;
         }
+
+        // Seal of Command proc
+        if (spellProto->Id == 20424)
+            coeff = donePart ? 0.2f : 0.29f;
 
         // Chain Lightning / Chain Heal
         if (spellProto->IsFitToFamily<SPELLFAMILY_SHAMAN, CF_SHAMAN_CHAIN_HEAL, CF_SHAMAN_CHAIN_LIGHTNING>())

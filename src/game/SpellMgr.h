@@ -86,7 +86,7 @@ SpellBuffType GetSpellBuffType(uint32 spellId);
 inline float GetSpellRadius(SpellRadiusEntry const* radius) { return (radius ? radius->Radius : 0); }
 uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell = nullptr);
 float CalculateDefaultCoefficient(SpellEntry const *spellProto, DamageEffectType const damagetype);
-float CalculateCustomCoefficient(SpellEntry const *spellProto,  Unit const* caster, DamageEffectType const damageType, float coeff, uint8 targetNum = 1);
+float CalculateCustomCoefficient(SpellEntry const *spellProto,  Unit const* caster, DamageEffectType const damageType, bool donePart, uint8 targetNum, float coeff);
 int32 CalculateBonusByAttackPower(SpellEntry const *spellProto,  Unit const* caster, DamageEffectType const damageType, int32 total, int32 apBenefit);
 inline float GetSpellMinRange(SpellRangeEntry const* range) { return (range ? range->minRange : 0); }
 inline float GetSpellMaxRange(SpellRangeEntry const* range) { return (range ? range->maxRange : 0); }

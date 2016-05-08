@@ -5321,7 +5321,7 @@ int32 Unit::SpellBonusWithCoeffs(SpellEntry const* spellProto, Unit const* caste
             float coeff = CalculateDefaultCoefficient(spellProto, damageType);
 
             // Check for calculate custom coefficient
-            coeff = CalculateCustomCoefficient(spellProto, caster, damageType, coeff, targetNum);
+            coeff = CalculateCustomCoefficient(spellProto, caster, damageType, donePart, targetNum, coeff);
 
             // Check for table values
             if (SpellBonusEntry const* bonus = sSpellMgr.GetSpellBonusData(spellProto->Id))
@@ -5912,7 +5912,7 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
         return pdamage;
 
     // differentiate for weapon damage based spells
-    bool isWeaponDamageBasedSpell = !(spellProto && (damagetype == DOT || IsSpellHaveEffect(spellProto, SPELL_EFFECT_SCHOOL_DAMAGE)));
+    bool isWeaponDamageBasedSpell = !(spellProto && (damagetype == DOT || IsSpellHaveEffect(spellProto, SPELL_EFFECT_SCHOOL_DAMAGE) || spellProto->Id == 20424));
     Item*  pWeapon          = GetTypeId() == TYPEID_PLAYER ? ((Player*)this)->GetWeaponForAttack(attType, true, false) : nullptr;
     uint32 creatureTypeMask = pVictim->GetCreatureTypeMask();
     uint32 schoolMask       = spellProto ? GetSpellSchoolMask(spellProto) : uint32(GetMeleeDamageSchoolMask());
@@ -6026,6 +6026,10 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
     // apply spellmod to Done damage
     if (spellProto)
     {
+        // Judgement of Command workaround (in pre-bc without spell classmask)
+        if (spellProto->SpellIconID == 561 && spellProto->HasAttribute(SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK) && !pVictim->hasUnitState(UNIT_STAT_STUNNED))
+            tmpDamage = int32(tmpDamage / 2);
+
         if (Player* modOwner = GetSpellModOwner())
             modOwner->ApplySpellMod(spellProto->Id, damagetype == DOT ? SPELLMOD_DOT : SPELLMOD_DAMAGE, tmpDamage);
     }
@@ -6047,7 +6051,7 @@ uint32 Unit::MeleeDamageBonusTaken(Unit* pCaster, uint32 pdamage, WeaponAttackTy
         return pdamage;
 
     // differentiate for weapon damage based spells
-    bool isWeaponDamageBasedSpell = !(spellProto && (damagetype == DOT || IsSpellHaveEffect(spellProto, SPELL_EFFECT_SCHOOL_DAMAGE)));
+    bool isWeaponDamageBasedSpell = !(spellProto && (damagetype == DOT || IsSpellHaveEffect(spellProto, SPELL_EFFECT_SCHOOL_DAMAGE) || spellProto->Id == 20424));
     uint32 schoolMask       = spellProto ? GetSpellSchoolMask(spellProto) : uint32(GetMeleeDamageSchoolMask());
 
     // FLAT damage bonus auras
