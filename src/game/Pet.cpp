@@ -1032,6 +1032,8 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
         SetUInt32Value(UNIT_MOD_CAST_SPEED, creature->GetUInt32Value(UNIT_MOD_CAST_SPEED));
         SetLoyaltyLevel(REBELLIOUS);
     }
+
+    SetCanModifyStats(true);
     return true;
 }
 
