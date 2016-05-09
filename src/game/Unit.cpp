@@ -5303,45 +5303,33 @@ void Unit::EnergizeBySpell(Unit* pVictim, uint32 SpellID, uint32 Damage, Powers 
     pVictim->ModifyPower(powertype, Damage);
 }
 
-int32 Unit::SpellBonusWithCoeffs(SpellEntry const* spellProto, Unit const* caster, int32 total, int32 spdBenefit, int32 apBenefit, DamageEffectType damageType, bool donePart, uint8 targetNum)
+int32 Unit::CalculateBonusBySpellPower(SpellEntry const* spellProto, Unit const* caster, int32 spdBenefit, DamageEffectType damageType, bool donePart, uint8 targetNum)
 {
-    if (caster && (caster->GetTypeId() == TYPEID_PLAYER || caster->isPet()))
+    if (!spdBenefit || !caster || (caster->GetTypeId() != TYPEID_PLAYER && !caster->isPet()))
+        return spdBenefit;
+
+    // Calculate level penalty
+    float lvlPenalty = CalculateLevelPenalty(spellProto);
+
+    // Calculate default coefficient
+    float coeff = CalculateDefaultCoefficient(spellProto, damageType);
+
+    // Check for calculate custom coefficient
+    coeff = CalculateCustomCoefficient(spellProto, caster, damageType, donePart, targetNum, coeff);
+
+    // Check for table values
+    if (SpellBonusEntry const* bonus = sSpellMgr.GetSpellBonusData(spellProto->Id))
+        coeff = damageType == DOT ? bonus->dot_damage : bonus->direct_damage;
+
+    // Spellmod SpellDamage
+    if (Player* modOwner = GetSpellModOwner())
     {
-        // + AP bonus calculation only if done part
-        if (donePart)
-            total += CalculateBonusByAttackPower(spellProto, caster, damageType, total, apBenefit);
-
-        // + SPD bonus calculation
-        if (spdBenefit)
-        {
-            // Calculate level penalty
-            float lvlPenalty = CalculateLevelPenalty(spellProto);
-
-            // Calculate default coefficient
-            float coeff = CalculateDefaultCoefficient(spellProto, damageType);
-
-            // Check for calculate custom coefficient
-            coeff = CalculateCustomCoefficient(spellProto, caster, damageType, donePart, targetNum, coeff);
-
-            // Check for table values
-            if (SpellBonusEntry const* bonus = sSpellMgr.GetSpellBonusData(spellProto->Id))
-                coeff = damageType == DOT ? bonus->dot_damage : bonus->direct_damage;
-
-            // Spellmod SpellDamage
-            if (Player* modOwner = GetSpellModOwner())
-            {
-                coeff *= 100.0f;
-                modOwner->ApplySpellMod(spellProto->Id, SPELLMOD_SPELL_BONUS_DAMAGE, coeff);
-                coeff /= 100.0f;
-            }
-
-            total += int32(floor((spdBenefit * coeff * lvlPenalty) + 0.5f));
-        }
+        coeff *= 100.0f;
+        modOwner->ApplySpellMod(spellProto->Id, SPELLMOD_SPELL_BONUS_DAMAGE, coeff);
+        coeff /= 100.0f;
     }
-    else
-        total = total + spdBenefit + apBenefit;
 
-    return total;
+    return int32(floor((spdBenefit * coeff * lvlPenalty) + 0.5f));
 };
 
 /**
@@ -5425,8 +5413,8 @@ uint32 Unit::SpellDamageBonusDone(Unit* pVictim, SpellEntry const* spellProto, u
     if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->IsPet())
         DoneAdvertisedBenefit += ((Pet*)this)->GetBonusDamage();
 
-    // apply ap bonus and benefit affected by spell power implicit coeffs and spell level penalties
-    DoneTotal = SpellBonusWithCoeffs(spellProto, this, DoneTotal, DoneAdvertisedBenefit, 0, damagetype, true, targetNum);
+    // apply benefit affected by spell power implicit coeffs and spell level penalties
+    DoneTotal += CalculateBonusBySpellPower(spellProto, this, DoneAdvertisedBenefit, damagetype, true, targetNum);
 
     float tmpDamage = (int32(pdamage) + DoneTotal * int32(stack)) * DoneTotalMod;
     // apply spellmod to Done damage (flat and pct)
@@ -5458,7 +5446,7 @@ uint32 Unit::SpellDamageBonusTaken(Unit* pCaster, SpellEntry const* spellProto, 
     int32 TakenAdvertisedBenefit = SpellBaseDamageBonusTaken(GetSpellSchoolMask(spellProto));
 
     // apply benefit affected by spell power implicit coeffs and spell level penalties
-    TakenTotal = pCaster->SpellBonusWithCoeffs(spellProto, pCaster, TakenTotal, TakenAdvertisedBenefit, 0, damagetype, false, targetNum);
+    TakenTotal += pCaster->CalculateBonusBySpellPower(spellProto, pCaster, TakenAdvertisedBenefit, damagetype, false, targetNum);
 
     float tmpDamage = (int32(pdamage) + TakenTotal * int32(stack)) * TakenTotalMod;
 
@@ -5697,8 +5685,8 @@ uint32 Unit::SpellHealingBonusDone(Unit* pVictim, SpellEntry const* spellProto, 
     // Done fixed damage bonus auras
     int32 DoneAdvertisedBenefit  = SpellBaseHealingBonusDone(GetSpellSchoolMask(spellProto));
 
-    // apply ap bonus and benefit affected by spell power implicit coeffs and spell level penalties
-    DoneTotal = SpellBonusWithCoeffs(spellProto, this, DoneTotal, DoneAdvertisedBenefit, 0, damagetype, true, targetNum);
+    // apply benefit affected by spell power implicit coeffs and spell level penalties
+    DoneTotal += CalculateBonusBySpellPower(spellProto, this, DoneAdvertisedBenefit, damagetype, true, targetNum);
 
     // use float as more appropriate for negative values and percent applying
     float heal = (healamount + DoneTotal * int32(stack)) * DoneTotalMod;
@@ -5759,7 +5747,7 @@ uint32 Unit::SpellHealingBonusTaken(Unit* pCaster, SpellEntry const* spellProto,
     }
 
     // apply benefit affected by spell power implicit coeffs and spell level penalties
-    TakenTotal = pCaster->SpellBonusWithCoeffs(spellProto, pCaster, TakenTotal, TakenAdvertisedBenefit, 0, damagetype, false, targetNum);
+    TakenTotal += pCaster->CalculateBonusBySpellPower(spellProto, pCaster, TakenAdvertisedBenefit, damagetype, false, targetNum);
 
     // Taken mods
     // Healing Wave cast
@@ -5996,7 +5984,8 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
     if (!isWeaponDamageBasedSpell)
     {
         // apply ap bonus and benefit affected by spell power implicit coeffs and spell level penalties
-        DoneTotal = SpellBonusWithCoeffs(spellProto, this, DoneTotal, DoneFlat, APbonus, damagetype, true);
+        DoneTotal += CalculateBonusByAttackPower(spellProto, this, damagetype, APbonus);
+        DoneTotal += CalculateBonusBySpellPower(spellProto, this, DoneFlat, damagetype, true);
     }
     // weapon damage based spells
     else if (APbonus || DoneFlat)
@@ -6021,15 +6010,17 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
         DoneTotal *= GetModifierValue(unitMod, TOTAL_PCT);
     }
 
-    float tmpDamage = float(int32(pdamage) + DoneTotal * int32(stack)) * DonePercent;
+    float tmpDamage = pdamage;
+
+    // Judgement of Command workaround (in pre-bc without spell classmask, also /2 without bonus damage)
+    if (spellProto && spellProto->SpellIconID == 561 && spellProto->HasAttribute(SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK) && !pVictim->hasUnitState(UNIT_STAT_STUNNED))
+        tmpDamage = int32(tmpDamage / 2);
+
+    tmpDamage = float(int32(tmpDamage) + DoneTotal * int32(stack)) * DonePercent;
 
     // apply spellmod to Done damage
     if (spellProto)
     {
-        // Judgement of Command workaround (in pre-bc without spell classmask)
-        if (spellProto->SpellIconID == 561 && spellProto->HasAttribute(SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK) && !pVictim->hasUnitState(UNIT_STAT_STUNNED))
-            tmpDamage = int32(tmpDamage / 2);
-
         if (Player* modOwner = GetSpellModOwner())
             modOwner->ApplySpellMod(spellProto->Id, damagetype == DOT ? SPELLMOD_DOT : SPELLMOD_DAMAGE, tmpDamage);
     }
@@ -6087,7 +6078,7 @@ uint32 Unit::MeleeDamageBonusTaken(Unit* pCaster, uint32 pdamage, WeaponAttackTy
     if (!isWeaponDamageBasedSpell)
     {
         // apply benefit affected by spell power implicit coeffs and spell level penalties
-        TakenFlat = pCaster->SpellBonusWithCoeffs(spellProto, pCaster, 0, TakenFlat, 0, damagetype, false);
+        TakenFlat += pCaster->CalculateBonusBySpellPower(spellProto, pCaster, TakenFlat, damagetype, false);
     }
 
     float tmpDamage = float(int32(pdamage) + TakenFlat * int32(stack)) * TakenPercent;

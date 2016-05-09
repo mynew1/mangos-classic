@@ -1735,7 +1735,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void UnsummonAllTotems();
         Unit* SelectMagnetTarget(Unit* victim, Spell* spell = nullptr, SpellEffectIndex eff = EFFECT_INDEX_0);
 
-        int32 SpellBonusWithCoeffs(SpellEntry const *spellProto, Unit const* caster, int32 total, int32 spdBenefit, int32 apBenefit, DamageEffectType damageType, bool donePart, uint8 targetNum = 1);
+        int32 CalculateBonusBySpellPower(SpellEntry const *spellProto, Unit const* caster, int32 spdBenefit, DamageEffectType damageType, bool donePart, uint8 targetNum = 1);
         int32 SpellBaseDamageBonusDone(SpellSchoolMask schoolMask);
         int32 SpellBaseDamageBonusTaken(SpellSchoolMask schoolMask);
         uint32 SpellDamageBonusDone(Unit* pVictim, SpellEntry const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1, uint8 targetNum = 1);

@@ -341,16 +341,18 @@ float CalculateCustomCoefficient(SpellEntry const *spellProto, Unit const* caste
     return coeff;
 }
 
-int32 CalculateBonusByAttackPower(SpellEntry const *spellProto, Unit const* caster, DamageEffectType const damageType, int32 total, int32 apBenefit)
+int32 CalculateBonusByAttackPower(SpellEntry const *spellProto, Unit const* caster, DamageEffectType const damageType, int32 apBenefit)
 {
     if (!caster)
         return 0;
-        
+
+    int32 total = 0;
+
     switch (spellProto->SpellFamilyName)
     {
         case SPELLFAMILY_DRUID:
         {
-            
+
             if (spellProto->IsFitToFamily<SPELLFAMILY_DRUID, CF_DRUID_RIP_BITE>())
             {
                 // Rip
