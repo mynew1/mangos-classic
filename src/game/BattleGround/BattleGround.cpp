@@ -717,7 +717,7 @@ void BattleGround::EndBattleGround(Team winner)
         if (team == winner)
         {
             RewardMark(plr, ITEM_WINNER_COUNT);
-            RewardQuestComplete(plr);
+            //RewardQuestComplete(plr);
         }
         else
             RewardMark(plr, ITEM_LOSER_COUNT);
