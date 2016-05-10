@@ -231,6 +231,11 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, S
 {
     SpellEntry const* spellProto = holder->GetSpellProto();
 
+    // early check to prevent Frost Nova damage to remove Aura 26
+    if (procSpell && (procSpell->Id == spellProto->Id) && (spellProto->SpellIconID == 193) &&
+       (spellProto->SpellVisual == 17) && (spellProto->SpellFamilyName == SPELLFAMILY_MAGE))
+        return false;
+
     // Get proc Event Entry
     spellProcEvent = sSpellMgr.GetSpellProcEvent(spellProto->Id);
 
@@ -308,7 +313,7 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, S
     {
         if ((procSpell && procSpell->SpellIconID == 249 && procSpell->SpellVisual == 257) && (spellProto->SpellFamilyName == SPELLFAMILY_ROGUE && spellProto->SpellIconID == 249 && spellProto->SpellVisual == 0))
             RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
-        
+
         return false;
     }
 
