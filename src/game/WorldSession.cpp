@@ -511,7 +511,7 @@ void WorldSession::LogoutPlayer(bool Save)
 /// Kick a player out of the World
 void WorldSession::KickPlayer()
 {
-    if (m_Socket)
+    if (!m_Socket->IsClosed())
         m_Socket->CloseSocket();
 }
 
