@@ -58,8 +58,8 @@ namespace Movement
 
             /* Initializes simple A to B mition, A is current unit's position, B is destination
              */
-            void MoveTo(const Vector3& destination, bool generatePath = false, bool forceDestination = false);
-            void MoveTo(float x, float y, float z, bool generatePath = false, bool forceDestination = false);
+            void MoveTo(const Vector3& destination, bool generatePath = false, bool forceDestination = false, float heightCorrection = 0);
+            void MoveTo(float x, float y, float z, bool generatePath = false, bool forceDestination = false, float heightCorrection = 0);
 
             /* Sets Id of fisrt point of the path. When N-th path point will be done ILisener will notify that pointId + N done
              * Needed for waypoint movement where path splitten into parts
@@ -105,18 +105,24 @@ namespace Movement
         args.path.assign(controls.begin(), controls.end());
     }
 
-    inline void MoveSplineInit::MoveTo(float x, float y, float z, bool generatePath, bool forceDestination)
+    inline void MoveSplineInit::MoveTo(float x, float y, float z, bool generatePath, bool forceDestination, float heightCorrection)
     {
         Vector3 v(x, y, z);
-        MoveTo(v, generatePath, forceDestination);
+        MoveTo(v, generatePath, forceDestination, heightCorrection);
     }
 
-    inline void MoveSplineInit::MoveTo(const Vector3& dest, bool generatePath, bool forceDestination)
+    inline void MoveSplineInit::MoveTo(const Vector3& dest, bool generatePath, bool forceDestination, float heightCorrection)
     {
         if (generatePath)
         {
             PathFinder path(&unit);
             path.calculate(dest.x, dest.y, dest.z, forceDestination);
+
+            for (PointsArray::iterator itr = path.getPath().begin(); itr != path.getPath().end(); ++itr)
+            {
+                (*itr).z += heightCorrection;
+            }
+
             MovebyPath(path.getPath());
         }
         else

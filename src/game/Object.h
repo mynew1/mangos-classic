@@ -457,6 +457,16 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         { loc.mapid = m_mapId; GetPosition(loc.coord_x, loc.coord_y, loc.coord_z); loc.orientation = GetOrientation(); }
         float GetOrientation() const { return m_position.o; }
 
+        void MovePositionToFirstCollision(Position &pos, float dist, float angle);
+        void GetFirstCollisionPosition(Position &pos, float dist, float angle)
+        {
+            pos.x = m_position.x;
+            pos.y = m_position.y;
+            pos.z = m_position.z;
+            pos.o = GetOrientation();
+            MovePositionToFirstCollision(pos, dist, angle);
+        }
+
         /// Gives a 2d-point in distance distance2d in direction absAngle around the current position (point-to-point)
         void GetNearPoint2D(float& x, float& y, float distance2d, float absAngle) const;
         /** Gives a "free" spot for searcher in distance distance2d in direction absAngle on "good" height

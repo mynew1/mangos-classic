@@ -1876,3 +1876,54 @@ void WorldObject::SetActiveObjectState(bool active)
     }
     m_isActiveObject = active;
 }
+
+void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float angle)
+{
+    angle += GetOrientation();
+    float destx, desty, destz, ground, floor;
+
+    destx = pos.x + dist * cos(angle);
+    desty = pos.y + dist * sin(angle);
+    ground = GetMap()->GetHeight(destx, desty, MAX_HEIGHT);
+    floor = GetMap()->GetHeight(destx, desty, pos.z);
+    destz = fabs(ground - pos.z) <= fabs(floor - pos.z) ? ground : floor;
+
+    bool col = VMAP::VMapFactory::createOrGetVMapManager()->getObjectHitPos(GetMapId(), pos.x, pos.y, pos.z+0.5f, destx, desty, destz+0.5f, destx, desty, destz, -0.5f);
+
+    // collision occured
+    if (col)
+    {
+        // move back a bit
+        destx -= CONTACT_DISTANCE * cos(angle);
+        desty -= CONTACT_DISTANCE * sin(angle);
+        dist = sqrt((pos.x - destx)*(pos.x - destx) + (pos.y - desty)*(pos.y - desty));
+    }
+
+    float step = dist/10.0f;
+
+    int j = 0;
+    for (j; j < 10; j++)
+    {
+        // do not allow too big z changes
+        if (fabs(pos.z - destz) > 6)
+        {
+            destx -= step * cos(angle);
+            desty -= step * sin(angle);
+            ground = GetMap()->GetHeight(destx, desty, MAX_HEIGHT);
+            floor = GetMap()->GetHeight(destx, desty, pos.z);
+            destz = fabs(ground - pos.z) <= fabs(floor - pos.z) ? ground : floor;
+        }
+        else
+        {
+            pos.x = destx;
+            pos.y = desty;
+            pos.z = destz;
+            break;
+        }
+    }
+
+    MaNGOS::NormalizeMapCoord(pos.x);
+    MaNGOS::NormalizeMapCoord(pos.y);
+    UpdateGroundPositionZ(pos.x, pos.y, pos.z);
+    pos.o = GetOrientation();
+}

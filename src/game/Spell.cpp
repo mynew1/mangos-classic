@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <movement/MoveSplineInit.h>
 #include "Spell.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -4031,6 +4032,17 @@ SpellCastResult Spell::CheckCast(bool strict)
 
             if (!m_IsTriggeredSpell && VMAP::VMapFactory::checkSpellForLoS(m_spellInfo->Id) && !m_caster->IsWithinLOSInMap(target))
                 return SPELL_FAILED_LINE_OF_SIGHT;
+
+            if (m_caster->GetTypeId() == TYPEID_PLAYER && m_spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CHARGE)
+            {
+                PathFinder path(m_caster);
+                path.calculate(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), true);
+
+                // This is a really hacky way to avoid invalid paths
+                // Todo: Do it right
+                if (path.getPath().size() < 3 || path.getPath().size() > 12)
+                    return SPELL_FAILED_LINE_OF_SIGHT;
+            }
 
             // auto selection spell rank implemented in WorldSession::HandleCastSpellOpcode
             // this case can be triggered if rank not found (too low-level target for first rank)

@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <movement/MoveSplineInit.h>
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -4666,16 +4667,16 @@ void Spell::EffectCharge(SpellEffectIndex /*eff_idx*/)
     if (!unitTarget)
         return;
 
-    // TODO: research more ContactPoint/attack distance.
-    // 3.666666 instead of ATTACK_DISTANCE(5.0f) in below seem to give more accurate result.
-    float x, y, z;
-    unitTarget->GetContactPoint(m_caster, x, y, z, 3.666666f);
+    float angle = unitTarget->GetAngle(m_caster) - unitTarget->GetOrientation();
+    Position pos;
+
+    unitTarget->GetContactPoint(m_caster, pos.x, pos.y, pos.z);
+    unitTarget->GetFirstCollisionPosition(pos, unitTarget->GetObjectScale(), angle);
 
     if (unitTarget->GetTypeId() != TYPEID_PLAYER)
         ((Creature*)unitTarget)->StopMoving();
 
-    // Only send MOVEMENTFLAG_WALK_MODE, client has strange issues with other move flags
-    m_caster->MonsterMoveWithSpeed(x, y, z + 1.5f, 24.f, true, true);
+    m_caster->MonsterMoveWithSpeed(pos.x, pos.y, pos.z, 26.0f, true, true, 1.5f);
 
     // not all charge effects used in negative spells
     if (unitTarget != m_caster && !IsPositiveSpell(m_spellInfo->Id))
