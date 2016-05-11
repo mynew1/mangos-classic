@@ -4041,7 +4041,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 // This is a really hacky way to avoid invalid paths
                 // Todo: Do it right
                 if (path.getPath().size() < 3 || path.getPath().size() > 12)
-                    return SPELL_FAILED_LINE_OF_SIGHT;
+                    return SPELL_FAILED_NOPATH;
             }
 
             // auto selection spell rank implemented in WorldSession::HandleCastSpellOpcode
