@@ -94,6 +94,8 @@ void WorldSession::HandleLootOpcode(WorldPacket& recv_data)
     if (!_player->isAlive())
         return;
 
+    _player->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+
     if (Loot* loot = sLootMgr.GetLoot(_player, lguid))
         loot->ShowContentTo(_player);
 }
