@@ -504,6 +504,24 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_originalCaster->CastSpell(channelTarget, 13481, true, nullptr, nullptr, m_originalCasterGUID, m_spellInfo);
                     return;
                 }
+                case 13278:                                 // Gnomish Death Ray (Init)
+                {
+                    m_caster->CastSpell(m_caster, 13493, true);
+
+                    return;
+                }
+                case 13280:                                 // Gnomish Death Ray (Finish)
+                {
+                    uint32 roll = urand(0, 99);
+
+                    if (roll < 15)
+                        m_caster->CastSpell(m_caster, 13279, true);
+
+                    else
+                        m_caster->CastSpell(unitTarget, 13279, true);
+
+                    return;
+                }
                 case 13489:
                 {
                     if (!unitTarget)
