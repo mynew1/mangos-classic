@@ -1084,16 +1084,21 @@ void Aura::TriggerSpell()
                 triggerTarget->CastCustomSpell(triggerTarget, 19698, &damageForTick[GetAuraTicks() - 1], nullptr, nullptr, true, nullptr);
                 return;
             }
-            case 21926: // Nature's Ally (T1 5/8 bonus)
-            case 21928: // Nature's Ally (T2 5/8 bonus)
-            case 21741: // Demonic Ally (T1 5/8 bonus)
-            case 21922: // Demonic Ally (T2 5/8 bonus)
+            case 21926: // Nature's Ally (hunter's T1 5/8 bonus)
+            case 21928: // Nature's Ally (hunter's T2 5/8 bonus)
+            case 21741: // Demonic Ally (warlock's T1 5/8 bonus)
+            case 21922: // Demonic Ally (warlock's T2 5/8 bonus)
             {
                 if (Pet* pet = triggerTarget->GetPet())
-                    if (SpellAuraHolder* holder = pet->GetSpellAuraHolder(trigger_spell_id)
+                {
+                    if (SpellAuraHolder *holder = pet->GetSpellAuraHolder(trigger_spell_id))
+                    {
                         holder->SetAuraDuration(4000);
+                        return;
+                    }
+                }
 
-                return;
+                break;
             }
         }
     }
