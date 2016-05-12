@@ -796,6 +796,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(m_caster, 13166, true, m_CastItem);
                     return;
                 }
+                case 23134:                                 // Goblin Bomb Dispenser
+                {
+                    if (!m_CastItem)
+                        return;
+
+                    m_caster->CastSpell(m_caster, 13258, true, m_CastItem);
+                    return;
+                }
                 case 23138:                                 // Gate of Shazzrah
                 {
                     if (!unitTarget)
