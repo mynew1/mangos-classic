@@ -1354,7 +1354,7 @@ void Loot::GroupCheck()
                     continue;
 
                 if (*itr == m_masterOwnerGuid)
-                    masterLooter == looter;
+                    masterLooter = looter;
 
                 data << *itr;
                 ++playerCount;
