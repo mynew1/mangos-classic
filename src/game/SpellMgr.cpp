@@ -137,11 +137,6 @@ uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell)
     if (spellInfo->HasAttribute(SPELL_ATTR_RANGED) && (!spell || !spell->IsAutoRepeat()))
         castTime += 500;
 
-    // [workaround] holy light need script effect, but 19968 spell for it have 2.5 cast time sec
-    // it should be instant instead
-    if (spellInfo->Id == 19968)
-        castTime = 0;
-
     return (castTime > 0) ? uint32(castTime) : 0;
 }
 
@@ -3816,4 +3811,15 @@ void SpellMgr::LoadFacingCasterFlags()
 
     sLog.outString();
     sLog.outString(">> Loaded %u facing caster flags", count);
+}
+
+void SpellMgr::LoadCustomSpellData()
+{
+    // Holy Light trigger instant cast
+    if (SpellEntry* spellInfo = (SpellEntry*)sSpellStore.LookupEntry(19968))
+        spellInfo->CastingTimeIndex = 1;
+
+    // Seal of Command Trigger minor delay (melee radius 5.0 / 10.0 * 1000 = 0.5sec delay)
+    if (SpellEntry* spellInfo = (SpellEntry*)sSpellStore.LookupEntry(20424))
+        spellInfo->speed = 10.0f;
 }

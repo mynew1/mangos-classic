@@ -1120,6 +1120,7 @@ class SpellMgr
         void LoadSpellPetAuras();
         void LoadSpellAreas();
         void LoadFacingCasterFlags();
+        void LoadCustomSpellData();
 
     private:
         SpellChainMap      mSpellChains;

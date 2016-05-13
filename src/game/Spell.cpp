@@ -637,6 +637,11 @@ void Spell::prepareDataForTriggerSystem()
     {
         switch (m_spellInfo->SpellFamilyName)
         {
+            case SPELLFAMILY_GENERIC:
+                // Seal of Command trigger (example Vengeance proc)
+                if (m_spellInfo->Id == 20424)
+                    m_canTrigger = true;
+                break;
             case SPELLFAMILY_MAGE:
                 // Arcane Missiles / Blizzard triggers need do it
                 if (m_spellInfo->GetSpellFamilyFlags().test<CF_MAGE_ARCANE_MISSILES, CF_MAGE_BLIZZARD>())
