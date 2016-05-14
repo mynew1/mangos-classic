@@ -434,7 +434,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     if (m_caster->GetTypeId() != TYPEID_PLAYER)
                         return;
 
-                    uint32 spell_id = 0;
+                    uint32 spell_id;
                     switch (urand(1, 2))
                     {
                         // Flip Out - ninja
@@ -739,7 +739,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     if (!itemTarget && m_caster->GetTypeId() != TYPEID_PLAYER)
                         return;
 
-                    uint32 spell_id = urand(0, 1)
+                    uint32 spell_id = urand(0, 1)           // A 50/50 chance for THIS quest? I remember it being extremely brutal.
                                       ? 17269               // Create Resonating Skull
                                       : 17270;              // Create Bone Dust
 
@@ -974,7 +974,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
 
-                    // 5 different spells used depending on mounted speed
+                    // 2 different spells used depending on mounted speed
                     if (speed >= 2.0f)
                         m_caster->CastSpell(m_caster, 25859, true); // 100% ground Reindeer
                     else
