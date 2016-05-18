@@ -6880,7 +6880,7 @@ void Player::CastItemUseSpell(Item* item, SpellCastTargets const& targets)
 
         Spell* spell = new Spell(this, spellInfo, (count > 0));
         spell->m_CastItem = item;
-        spell->prepare(&targets);
+        spell->SpellStart(&targets);
 
         ++count;
     }
