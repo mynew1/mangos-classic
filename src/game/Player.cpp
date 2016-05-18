@@ -5943,10 +5943,8 @@ void Player::UpdateHonor()
     // RANK POINTS
     HonorStanding* standing = sObjectMgr.GetHonorStandingByGUID(GetGUIDLow(), GetTeam());
     float rankP = GetStoredHonor();
-    sLog.outString(">> StoredHonor: %f", rankP);
     if (standing)
     {
-        sLog.outString(">> rpEarning: %f", standing->rpEarning);
         rankP += standing->rpEarning;
     }
 

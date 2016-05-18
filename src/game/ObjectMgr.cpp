@@ -2703,8 +2703,6 @@ void ObjectMgr::DistributeRankPoints(uint32 team, uint32 dateBegin , bool flush 
         RP = fields[0].GetFloat();
         HK = fields[1].GetUInt32();
 
-        sLog.outString(">> DistributeRankPoints: guid = %u, RP = %f, HK = %u", itr->guid, RP, HK);
-
         itr->rpEarning = MaNGOS::Honor::CalculateRpEarning(itr->GetInfo()->honorPoints, scores);
         RP             = MaNGOS::Honor::CalculateRpDecay(itr->rpEarning, RP);
         
@@ -2719,6 +2717,7 @@ void ObjectMgr::DistributeRankPoints(uint32 team, uint32 dateBegin , bool flush 
             CharacterDatabase.CommitTransaction();
         }
     }
+    SetStandingListBySide(team, list);
 
     delete result;
 }
@@ -2737,10 +2736,9 @@ HonorStanding* ObjectMgr::GetHonorStandingByGUID(uint32 guid, uint32 side)
 {
     HonorStandingList standingList = sObjectMgr.GetStandingListBySide(side);
 
-    for (HonorStandingList::iterator itr = standingList.begin(); itr != standingList.end() ; ++itr)
+    for (HonorStandingList::iterator itr = standingList.begin(); itr != standingList.end(); ++itr)
         if (itr->guid == guid)
             return itr->GetInfo();
-
     return 0;
 }
 
